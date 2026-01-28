@@ -1,894 +1,533 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Skatzafrax</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --paper-color: #0c1824;
-            --ink-color: #d9d0c7;
-            --highlight-color: #f7d83b;
-            --highlight-secondary: #e05915;
-            --aged-mark: #1c2b3a;
-            --stain: rgba(126, 49, 0, 0.3);
-            --accent: #118ab2;
-            --grid-color: rgba(45, 80, 97, 0.15);
-        }
-
-        /* Background with parallax effect */
-        .parallax-bg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 200%;
-            height: 100%;
-            background-image:
-                radial-gradient(circle at 15% 20%, rgba(217, 91, 28, 0.2) 0%, transparent 25%),
-                radial-gradient(circle at 35% 65%, rgba(17, 138, 178, 0.15) 0%, transparent 30%),
-                radial-gradient(circle at 65% 40%, rgba(247, 216, 59, 0.1) 0%, transparent 35%),
-                radial-gradient(circle at 85% 30%, rgba(224, 89, 21, 0.15) 0%, transparent 25%);
-            background-size: 50% 100%, 40% 80%, 45% 90%, 40% 70%;
-            background-repeat: repeat-x;
-            z-index: -1;
-            transform: translateX(0);
-            transition: transform 0.1s ease-out;
-        }
-
-        body {
-            font-family: 'Courier Prime', monospace, Courier, monospace;
-            color: var(--ink-color);
-            background: var(--paper-color);
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 3rem 2rem;
-            position: relative;
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
-
-        /* Topographic map overlay */
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" opacity="0.05"><path d="M50,50 C150,20 300,100 450,50" stroke="%23f7d83b" fill="none" stroke-width="0.8" stroke-dasharray="2,3"/><path d="M50,120 C180,70 300,150 450,100" stroke="%23f7d83b" fill="none" stroke-width="0.8" stroke-dasharray="2,3"/><path d="M50,200 C200,130 350,220 450,160" stroke="%23f7d83b" fill="none" stroke-width="0.8" stroke-dasharray="2,3"/><path d="M50,290 C150,240 300,330 450,270" stroke="%23f7d83b" fill="none" stroke-width="0.8" stroke-dasharray="2,3"/><path d="M50,380 C200,320 320,400 450,360" stroke="%23f7d83b" fill="none" stroke-width="0.8" stroke-dasharray="2,3"/><path d="M100,50 L120,450 M200,50 L190,450 M300,50 L320,450 M400,50 L380,450" stroke="%23118ab2" fill="none" stroke-width="0.5" stroke-dasharray="5,5"/></svg>');
-            mix-blend-mode: overlay;
-            opacity: 0.3;
-            z-index: -1;
-        }
-
-        /* Compass needle animation */
-        @keyframes compass {
-            0% { transform: rotate(-5deg); }
-            25% { transform: rotate(5deg); }
-            50% { transform: rotate(3deg); }
-            75% { transform: rotate(-3deg); }
-            100% { transform: rotate(-5deg); }
-        }
-
-        /* Map unfold animation */
-        @keyframes unfold {
-            0% { opacity: 0; transform: scale(0.9); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-
-        header {
-            margin-bottom: 3rem;
-            padding-bottom: 1rem;
-            position: relative;
-            text-align: left;
-            animation: unfold 1.5s ease-out;
-        }
-
-        /* Map border decoration */
-        header::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image:
-                url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" opacity="0.2"><path d="M0,0 L20,0 M0,20 L0,0 M80,0 L100,0 M100,0 L100,20 M0,80 L0,100 M0,100 L20,100 M80,100 L100,100 M100,80 L100,100" stroke="%23f7d83b" fill="none" stroke-width="2"/></svg>'),
-                repeating-linear-gradient(
-                    45deg,
-                    transparent,
-                    transparent 10px,
-                    rgba(247, 216, 59, 0.03) 10px,
-                    rgba(247, 216, 59, 0.03) 12px
-                );
-            background-size: 100% 100%, 20px 20px;
-            pointer-events: none;
-        }
-
-        h1 {
-            font-family: 'EB Garamond', Georgia, serif;
-            font-size: 2.7rem;
-            font-weight: 600;
-            font-style: italic;
-            color: var(--highlight-color);
-            padding-left: 2rem;
-            margin-bottom: 1.5rem;
-            text-align: left;
-            letter-spacing: 2px;
-            position: relative;
-            text-shadow:
-                0 0 5px var(--highlight-color),
-                0 0 10px rgba(247, 216, 59, 0.5);
-        }
-
-        /* Compass element */
-        h1::before {
-            content: "◈";
-            position: absolute;
-            left: -25px;
-            top: 5px;
-            color: var(--highlight-secondary);
-            animation: compass 4s ease-in-out infinite;
-            transform-origin: center;
-            font-style: normal;
-        }
-
-        @keyframes blink {
-            0%, 49% { opacity: 1; }
-            50%, 100% { opacity: 0; }
-        }
-
-        /* Map coordinates */
-        h1::after {
-            content: "";
-            position: absolute;
-            padding-left: 2rem;
-            left: 0;
-            right: 0;
-            bottom: -25px;
-            font-size: 0.9rem;
-            color: var(--highlight-secondary);
-            opacity: 0.7;
-            font-family: 'Courier Prime', monospace, Courier, monospace;
-            letter-spacing: 1px;
-            font-style: normal;
-        }
-
-        .projects {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            position: relative;
-            z-index: 1;
-        }
-
-        .project {
-            background: var(--aged-mark);
-            border: 2px solid var(--highlight-color);
-            border-radius: 0;
-            padding: 1.5rem;
-            position: relative;
-            transition: transform 0.3s, box-shadow 0.3s;
-            box-shadow:
-                0 0 5px rgba(247, 216, 59, 0.3),
-                0 0 20px rgba(0, 0, 0, 0.15);
-            overflow: hidden;
-            transform: rotate(-0.5deg);
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Map route overlay */
-        .project::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" opacity="0.08"><path d="M20,20 L60,40 L100,30 L140,60 L180,40" stroke="%23f7d83b" fill="none" stroke-width="1.5" stroke-dasharray="5,3"/><path d="M40,60 L80,80 L120,70 L160,100" stroke="%23f7d83b" fill="none" stroke-width="1.5" stroke-dasharray="5,3"/><path d="M20,100 L50,120 L90,110 L130,140 L170,120" stroke="%23f7d83b" fill="none" stroke-width="1.5" stroke-dasharray="5,3"/><circle cx="60" cy="40" r="3" fill="%23e05915"/><circle cx="120" cy="70" r="3" fill="%23e05915"/><circle cx="90" cy="110" r="3" fill="%23e05915"/><text x="55" y="35" font-family="sans-serif" font-size="8" fill="%23e05915">X</text><text x="125" y="75" font-family="sans-serif" font-size="8" fill="%23e05915">X</text><text x="85" y="105" font-family="sans-serif" font-size="8" fill="%23e05915">X</text></svg>');
-            z-index: -1;
-            opacity: 0.4;
-        }
-
-        .project:hover {
-            transform: translateY(-8px) rotate(0.5deg);
-            box-shadow:
-                0 0 10px rgba(247, 216, 59, 0.6),
-                0 0 30px rgba(0, 0, 0, 0.25);
-        }
-
-        /* Treasure map glow effect on hover */
-        .project:hover::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            box-shadow: inset 0 0 15px var(--highlight-color);
-            background-image: radial-gradient(
-                circle at center,
-                rgba(247, 216, 59, 0.15) 0%,
-                transparent 70%
-            );
-            opacity: 0.8;
-            z-index: -1;
-            pointer-events: none;
-        }
-
-        .project h2 {
-            font-family: 'EB Garamond', Georgia, serif;
-            font-weight: 600;
-            font-style: italic;
-            color: var(--highlight-color);
-            margin-top: 0;
-            margin-bottom: 0.75rem;
-            font-size: 1.4rem;
-            padding-bottom: 10px;
-            position: relative;
-            text-shadow: 0 0 5px rgba(247, 216, 59, 0.5);
-            transform: rotate(-0.5deg);
-        }
-
-
-        .project p {
-            font-size: 0.9rem;
-            color: var(--ink-color);
-            margin-bottom: 1rem;
-            position: relative;
-            padding-left: 15px;
-            border-left: 1px solid var(--highlight-secondary);
-            letter-spacing: 0.01em;
-            line-height: 1.7;
-        }
-        .meta {
-            margin-top: auto;
-            padding-top: 1rem;
-            font-size: 0.85rem;
-            display: flex;
-            flex-direction: column;
-            align-items: stretch;
-            gap: 0.8rem;
-        }
-
-        .meta a, .meta button {
-            color: var(--highlight-color);
-            text-decoration: none;
-            position: relative;
-            padding: 0.25rem 0.75rem;
-            border: 2px solid var(--highlight-color);
-            transition: all 0.3s;
-            text-transform: uppercase;
-            font-family: 'Courier Prime', monospace, Courier, monospace;
-            letter-spacing: 1px;
-            font-weight: bold;
-            border-radius: 0 10px 0 10px;
-            background: rgba(224, 89, 21, 0.1);
-            display: block;
-            text-align: center;
-            cursor: pointer;
-            font-size: 0.85rem;
-        }
-
-        .meta a:hover, .meta button:hover {
-            background: var(--highlight-color);
-            color: var(--paper-color);
-            box-shadow: 0 0 15px var(--highlight-color);
-            transform: translateY(-3px);
-        }
-
-        .meta a::before, .meta button::before {
-            content: "⌖";
-            margin-right: 5px;
-            display: inline-block;
-            transition: transform 0.3s;
-        }
-
-        .meta a:hover::before, .meta button:hover::before {
-            transform: rotate(45deg);
-        }
-
-        .tags {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            position: relative;
-        }
-
-        .active-filters {
-            margin: 1rem 0 2rem;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            background: var(--aged-mark);
-            display: none;
-        }
-
-        .active-filters.visible {
-            display: block;
-        }
-
-        .active-filters span {
-            font-size: 0.9rem;
-            margin-right: 0.5rem;
-            color: var(--highlight-color);
-        }
-
-        .active-filters button {
-            background: none;
-            border: none;
-            color: var(--highlight-secondary);
-            font-family: 'Courier Prime', monospace, Courier, monospace;
-            cursor: pointer;
-            margin-left: 0.5rem;
-            font-style: italic;
-        }
-
-        .active-filters button:hover {
-            text-decoration: underline;
-        }
-
-        .tag {
-            background: var(--aged-mark);
-            color: var(--highlight-secondary);
-            padding: 0.3rem 0.8rem;
-            font-size: 0.75rem;
-            border: 1px solid var(--highlight-secondary);
-            position: relative;
-            overflow: visible;
-            font-family: 'EB Garamond', Georgia, serif;
-            font-style: italic;
-            letter-spacing: 0.5px;
-            display: inline-block;
-            margin-right: 10px;
-            margin-bottom: 8px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .tag:hover {
-            background: rgba(224, 89, 21, 0.3);
-            transform: translateY(-2px);
-            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
-        }
-
-        .tag.active {
-            background: var(--highlight-secondary);
-            color: var(--paper-color);
-            box-shadow: 0 0 8px var(--highlight-secondary);
-        }
-
-        .tag::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at 30% 30%, rgba(247, 216, 59, 0.15), transparent 70%);
-            border-radius: 20px;
-            z-index: -1;
-        }
-
-        /* Adventure map elements with more Whitman-esque styling */
-        .project:nth-child(odd)::before {
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" opacity="0.06"><path d="M50,50 L100,30 L150,50 L200,40" stroke="%23e05915" fill="none" stroke-width="1.5" stroke-dasharray="4,2"/><path d="M30,100 L80,80 L130,100 L180,90" stroke="%23e05915" fill="none" stroke-width="1.5" stroke-dasharray="4,2"/><path d="M50,150 L100,130 L150,150 L200,140" stroke="%23e05915" fill="none" stroke-width="1.5" stroke-dasharray="4,2"/><text x="130" y="50" font-family="serif" font-size="9" fill="%23f7d83b">adventure</text><text x="60" y="100" font-family="serif" font-size="9" fill="%23f7d83b">discover</text><text x="160" y="130" font-family="serif" font-size="9" fill="%23f7d83b">explore</text></svg>');
-        }
-
-        .project:nth-child(3n)::after {
-            content: "";
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            width: 50px;
-            height: 50px;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" opacity="0.15"><path d="M25,5 C15,15 5,25 25,35 C45,25 35,15 25,5 Z" stroke="%23f7d83b" fill="none" stroke-width="1"/><path d="M25,15 L25,25 M20,20 L30,20" stroke="%23f7d83b" stroke-width="0.5"/><path d="M10,40 C20,35 30,35 40,40" stroke="%23f7d83b" stroke-width="0.5" stroke-dasharray="1,1"/></svg>');
-            background-repeat: no-repeat;
-            opacity: 0.6;
-        }
-
-        /* Whitman-inspired annotations */
-        .project:nth-child(even) p::after {
-            content: "";
-            position: absolute;
-            bottom: -5px;
-            right: 30px;
-            width: 80px;
-            height: 30px;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="30" opacity="0.2"><path d="M5,15 C20,5 40,25 60,15 S70,5 75,15" stroke="%23e05915" fill="none" stroke-width="1" stroke-dasharray="2,2"/><path d="M20,20 L40,10" stroke="%23f7d83b" stroke-width="0.7"/><path d="M50,20 L60,10" stroke="%23f7d83b" stroke-width="0.7"/></svg>');
-            background-repeat: no-repeat;
-        }
-
-        /* Terminal cursor in the header */
-        header::before {
-            content: "N 37°14′ W 115°48′";
-            position: absolute;
-            top: -20px;
-            left: 0;
-            font-size: 0.8rem;
-            color: var(--highlight-color);
-            font-family: 'Courier Prime', monospace, Courier, monospace;
-            opacity: 0.7;
-        }
-
-        /* Loading indicator */
-        .loading {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 2rem;
-            font-style: italic;
-            color: var(--highlight-color);
-        }
-
-        .loading::after {
-            content: "⌖";
-            display: inline-block;
-            margin-left: 10px;
-            animation: compass 2s linear infinite;
-        }
-
-        /* Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            position: relative;
-            width: 95%;
-            height: 95%;
-            max-width: 1800px;
-            max-height: 1200px;
-            background: var(--paper-color);
-            border: 3px solid var(--highlight-color);
-            box-shadow: 0 0 30px var(--highlight-color);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .modal-header {
-            padding: 1rem 1.5rem;
-            background: var(--aged-mark);
-            border-bottom: 2px solid var(--highlight-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header h2 {
-            margin: 0;
-            font-family: 'EB Garamond', Georgia, serif;
-            color: var(--highlight-color);
-            font-size: 1.5rem;
-            font-style: italic;
-        }
-
-        .modal-close {
-            background: none;
-            border: 2px solid var(--highlight-color);
-            color: var(--highlight-color);
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 0.25rem 0.75rem;
-            border-radius: 0 10px 0 10px;
-            font-family: 'Courier Prime', monospace;
-            transition: all 0.3s;
-        }
-
-        .modal-close:hover {
-            background: var(--highlight-color);
-            color: var(--paper-color);
-            box-shadow: 0 0 15px var(--highlight-color);
-        }
-
-        .modal-body {
-            flex: 1;
-            position: relative;
-            overflow: hidden;
-        }
-
-        #terrain-container {
-            width: 100%;
-            height: 100%;
-            position: relative;
-        }
-
-        #terrain-iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            display: block;
-        }
-
-        /* Media queries for responsive design */
-        @media (max-width: 768px) {
-            body {
-                padding: 2rem 1.5rem;
-            }
-
-            h1 {
-                font-size: 2rem;
-            }
-
-            h1::before {
-                left: -15px;
-                top: 0;
-            }
-
-            .projects {
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-            }
-
-            .project {
-                padding: 1.2rem;
-            }
-
-            .tag {
-                padding: 0.2rem 0.6rem;
-                margin-bottom: 5px;
-                font-size: 0.7rem;
-            }
-
-            .active-filters {
-                padding: 0.5rem;
-                margin-bottom: 1.5rem;
-            }
-
-            .meta {
-                gap: 0.6rem;
-            }
-
-            .modal-content {
-                width: 100%;
-                height: 100%;
-                max-width: 100%;
-                max-height: 100%;
-            }
-        }
-
-        @media (max-width: 480px) {
-            body {
-                padding: 1.5rem 1rem;
-            }
-
-            h1 {
-                font-size: 1.8rem;
-            }
-
-            h1::after {
-                font-size: 0.7rem;
-                bottom: -20px;
-            }
-
-            header::before {
-                font-size: 0.7rem;
-            }
-
-            .project h2 {
-                font-size: 1.2rem;
-            }
-
-            .active-filters span {
-                display: block;
-                margin-bottom: 0.5rem;
-            }
-
-            .active-filters button {
-                margin-top: 0.5rem;
-                display: inline-block;
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>XS-4 Terrain Scanner</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0a0a; overflow: hidden; font-family: 'Share Tech Mono', monospace; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+    #canvas-container { position: fixed; top: 0; left: 0; right: 0; bottom: 80px; }
+    canvas { display: block; width: 100%; height: 100%; }
+    .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; height: 80px; background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%); border-top: 2px solid #333; display: flex; align-items: center; justify-content: center; gap: 20px; z-index: 102; }
+    .hud { position: fixed; color: #8B2942; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; pointer-events: none; text-shadow: 0 0 8px rgba(0,0,0,0.8); background: rgba(0,0,0,0.25); backdrop-filter: blur(8px); padding: 15px; border-radius: 8px; z-index: 101; }
+    .hud-top-left { top: 20px; left: 20px; }
+    .hud-top-right { top: 20px; right: 20px; text-align: right; }
+    .hud-bottom-left { bottom: 100px; left: 20px; }
+    .title { font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 10px; color: #8B2942; }
+    .data-row { margin: 5px 0; }
+    .label { color: #E8A87C; font-weight: 600; }
+    .value { color: #00FFFF; font-weight: 700; }
+    .scanline { position: fixed; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.005) 2px, rgba(0,0,0,0.005) 4px); z-index: 100; }
+    .vignette { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.08) 100%); z-index: 99; }
+    .theme-controls { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; align-items: center; padding: 0 10px; }
+    .theme-btn { padding: 14px 24px; font-family: 'Share Tech Mono', monospace; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; border: 2px solid; background: rgba(0,0,0,0.5); cursor: pointer; transition: all 0.3s ease; font-weight: 700; border-radius: 4px; white-space: nowrap; }
+    .theme-btn.desert { border-color: #E8A87C; color: #E8A87C; }
+    .theme-btn.jungle { border-color: #39FF14; color: #39FF14; }
+    .theme-btn.arctic { border-color: #7FFFD4; color: #7FFFD4; }
+    .theme-btn.barrel-roll { border-color: #FF6600; color: #FF6600; }
+    .theme-btn.barrel-roll:hover { background: rgba(255, 102, 0, 0.2); }
+    .theme-btn.active { transform: scale(1.05); background: rgba(255,255,255,0.2); box-shadow: 0 0 20px currentColor; }
+    .theme-btn:hover { background: rgba(255,255,255,0.15); box-shadow: 0 0 15px currentColor; }
+    
+    /* Tablet */
+    @media (max-width: 900px) {
+      .theme-btn { padding: 12px 18px; font-size: 12px; letter-spacing: 1px; }
+      .theme-controls { gap: 10px; }
+    }
+    
+    /* Mobile */
+    @media (max-width: 768px) {
+      .hud { font-size: 10px; padding: 10px; letter-spacing: 1px; }
+      .hud-top-left { top: 10px; left: 10px; }
+      .hud-top-right { top: 10px; right: 10px; }
+      .hud-bottom-left { bottom: 95px; left: 10px; }
+      .title { font-size: 12px; margin-bottom: 6px; }
+      .data-row { margin: 3px 0; }
+      #canvas-container { bottom: 85px; }
+      .bottom-panel { height: 85px; padding: 10px; }
+      .theme-controls { gap: 8px; }
+      .theme-btn { padding: 10px 14px; font-size: 10px; letter-spacing: 1px; min-height: 44px; min-width: 44px; }
+    }
+    
+    /* Small mobile */
+    @media (max-width: 480px) {
+      .hud-top-right { display: none; }
+      .hud-bottom-left { display: none; }
+      .hud-top-left { top: 8px; left: 8px; padding: 8px; }
+      .title { font-size: 10px; }
+      .hud { font-size: 9px; }
+      #canvas-container { bottom: 75px; }
+      .bottom-panel { height: 75px; padding: 8px; }
+      .theme-btn { padding: 8px 10px; font-size: 9px; min-height: 40px; }
+      .theme-controls { gap: 6px; }
+    }
+  </style>
 </head>
-
 <body>
-    <div class="parallax-bg"></div>
-    <header>
-        <h1>Skatzafrax</h1>
-        <div class="active-filters">
-            <span>Filtering by:</span>
-            <span id="active-tag-list"></span>
-            <button id="clear-filters">Clear All</button>
-        </div>
-    </header>
+  <div id="canvas-container"></div>
+  <div class="scanline"></div>
+  <div class="vignette"></div>
+  <div class="hud hud-top-left">
+    <div class="title">◈ DESERT RECON // XS-4</div>
+    <div class="data-row"><span class="label">ALT:</span> <span class="value" id="altitude">0000</span>m</div>
+    <div class="data-row"><span class="label">SPD:</span> <span class="value" id="speed">000</span>km/h</div>
+    <div class="data-row"><span class="label">HDG:</span> <span class="value" id="heading">000</span>°</div>
+  </div>
+  <div class="hud hud-top-right">
+    <div class="title">STATUS ◈</div>
+    <div class="data-row"><span class="label">SYSTEM:</span> <span class="value">ONLINE</span></div>
+    <div class="data-row"><span class="label">MODE:</span> <span class="value">RECON</span></div>
+  </div>
+  <div class="hud hud-bottom-left">
+    <div class="data-row"><span class="label">LAT:</span> <span class="value" id="lat">47.3892</span>°N</div>
+    <div class="data-row"><span class="label">LON:</span> <span class="value" id="lon">-122.4821</span>°W</div>
+  </div>
 
-    <main class="projects">
-        <div class="loading">Loading...</div>
-    </main>
-
-    <!-- Modal for Terrain Visualization -->
-    <div id="terrain-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>3D Terrain Explorer</h2>
-                <button class="modal-close" id="close-modal">✕</button>
-            </div>
-            <div class="modal-body">
-                <div id="terrain-container"></div>
-            </div>
-        </div>
+  <div class="bottom-panel">
+    <div class="theme-controls">
+      <button class="theme-btn desert active" data-theme="desert">Desert</button>
+      <button class="theme-btn jungle" data-theme="jungle">Jungle</button>
+      <button class="theme-btn arctic" data-theme="arctic">Arctic</button>
+      <button class="theme-btn barrel-roll" id="barrel-roll-btn">🛩 Roll</button>
     </div>
+  </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Variable to store project data
-            let projectsData = [];
-            const projectsContainer = document.querySelector('.projects');
-            const modal = document.getElementById('terrain-modal');
-            const closeModalBtn = document.getElementById('close-modal');
-            let terrainInitialized = false;
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script>
+    // Simplex Noise
+    const SimplexNoise = (function () {
+      const F2 = 0.5 * (Math.sqrt(3) - 1), G2 = (3 - Math.sqrt(3)) / 6;
+      const grad3 = [[1,1,0],[-1,1,0],[1,-1,0],[-1,-1,0],[1,0,1],[-1,0,1],[1,0,-1],[-1,0,-1],[0,1,1],[0,-1,1],[0,1,-1],[0,-1,-1]];
+      class SimplexNoise {
+        constructor(seed = Math.random()) {
+          this.p = new Uint8Array(256); this.perm = new Uint8Array(512); this.permMod12 = new Uint8Array(512);
+          for (let i = 0; i < 256; i++) this.p[i] = i;
+          let n, q;
+          for (let i = 255; i > 0; i--) { seed = (seed * 16807) % 2147483647; n = seed % (i + 1); q = this.p[i]; this.p[i] = this.p[n]; this.p[n] = q; }
+          for (let i = 0; i < 512; i++) { this.perm[i] = this.p[i & 255]; this.permMod12[i] = this.perm[i] % 12; }
+        }
+        noise2D(x, y) {
+          const s = (x + y) * F2, i = Math.floor(x + s), j = Math.floor(y + s), t = (i + j) * G2;
+          const X0 = i - t, Y0 = j - t, x0 = x - X0, y0 = y - Y0;
+          let i1, j1; if (x0 > y0) { i1 = 1; j1 = 0; } else { i1 = 0; j1 = 1; }
+          const x1 = x0 - i1 + G2, y1 = y0 - j1 + G2, x2 = x0 - 1 + 2 * G2, y2 = y0 - 1 + 2 * G2;
+          const ii = i & 255, jj = j & 255;
+          let n0 = 0, n1 = 0, n2 = 0;
+          let t0 = 0.5 - x0 * x0 - y0 * y0;
+          if (t0 >= 0) { const gi0 = this.permMod12[ii + this.perm[jj]]; t0 *= t0; n0 = t0 * t0 * (grad3[gi0][0] * x0 + grad3[gi0][1] * y0); }
+          let t1 = 0.5 - x1 * x1 - y1 * y1;
+          if (t1 >= 0) { const gi1 = this.permMod12[ii + i1 + this.perm[jj + j1]]; t1 *= t1; n1 = t1 * t1 * (grad3[gi1][0] * x1 + grad3[gi1][1] * y1); }
+          let t2 = 0.5 - x2 * x2 - y2 * y2;
+          if (t2 >= 0) { const gi2 = this.permMod12[ii + 1 + this.perm[jj + 1]]; t2 *= t2; n2 = t2 * t2 * (grad3[gi2][0] * x2 + grad3[gi2][1] * y2); }
+          return 70 * (n0 + n1 + n2);
+        }
+      }
+      return SimplexNoise;
+    })();
 
-            // Load the projects from embedded data first for faster rendering
-            projectsData = getLocalData();
-            renderProjects(projectsData);
-            setupFiltering();
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x00CED1, 0);
+    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 4000);
+    camera.position.set(-200, 200, 200);
+    camera.lookAt(0, 0, 0);
 
-            // Function to render projects
-            function renderProjects(projects) {
-                projectsContainer.innerHTML = '';
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+    const renderer = new THREE.WebGLRenderer({ antialias: !isMobile, powerPreference: isMobile ? 'low-power' : 'high-performance' });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2));
+    renderer.setClearColor(0x00CED1);
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.shadowMap.enabled = !isMobile;
+    container.appendChild(renderer.domElement);
 
-                projects.forEach(project => {
-                    const projectElement = createProjectElement(project);
-                    projectsContainer.appendChild(projectElement);
-                });
-            }
+    const simplex = new SimplexNoise(42);
+    const terrainSize = 200, terrainSegments = isMobile ? 64 : 192, terrainHeight = 25, volumeDepth = 50;
 
-            // Function to create a project element
-            function createProjectElement(project) {
-                const article = document.createElement('article');
-                article.className = 'project';
-                article.style.animation = 'unfold 0.5s ease-out';
+    function getTerrainHeight(x, z) {
+      let height = 0; const scale = 0.018;
+      height += simplex.noise2D(x * scale, z * scale) * 1.0;
+      height += simplex.noise2D(x * scale * 2.5, z * scale * 2.5) * 0.5;
+      height += simplex.noise2D(x * scale * 5, z * scale * 5) * 0.25;
+      height += simplex.noise2D(x * scale * 10, z * scale * 10) * 0.125;
+      height = Math.pow(Math.abs(height), 0.9) * Math.sign(height);
+      let finalHeight = height * terrainHeight;
+      const valleyFloor = -5.0, valleyThreshold = -2.0;
+      if (finalHeight < valleyThreshold) {
+        const transitionFactor = (valleyThreshold - finalHeight) / (valleyThreshold - valleyFloor);
+        finalHeight = finalHeight * (1.0 - Math.min(1.0, transitionFactor)) + valleyFloor * Math.min(1.0, transitionFactor);
+      }
+      return finalHeight;
+    }
 
-                const heading = document.createElement('h2');
-                heading.textContent = project.title;
+    const terrainGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize, terrainSegments, terrainSegments);
+    terrainGeometry.rotateX(-Math.PI / 2);
+    const posAttr = terrainGeometry.attributes.position, pos = posAttr.array;
+    for (let i = 0; i < pos.length; i += 3) pos[i + 1] = getTerrainHeight(pos[i], pos[i + 2]);
+    posAttr.needsUpdate = true;
+    terrainGeometry.computeVertexNormals();
 
-                const description = document.createElement('p');
-                description.textContent = project.description;
+    const terrainMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        time: { value: 0 }, scrollOffset: { value: 0 },
+        colorSand: { value: new THREE.Color(0xDEB8A0) },
+        colorDune: { value: new THREE.Color(0xE8A87C) },
+        colorPeak: { value: new THREE.Color(0x8B2942) },
+        hasRivers: { value: 0.0 },
+        riverColor: { value: new THREE.Color(0x00FFFF) }
+      },
+      vertexShader: `varying vec3 vPosition; varying vec3 vNormal; varying float vElevation;
+        void main() { vPosition = position; vNormal = normal; vElevation = position.y; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+      fragmentShader: `
+        uniform float time, scrollOffset, hasRivers;
+        uniform vec3 colorSand, colorDune, colorPeak, riverColor;
+        varying vec3 vPosition, vNormal; varying float vElevation;
+        float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+        void main() {
+          float heightFactor = clamp((vElevation + 20.0) / 40.0, 0.0, 1.0);
+          vec3 color = heightFactor < 0.5 ? mix(colorSand, colorDune, heightFactor * 2.0) : mix(colorDune, colorPeak, (heightFactor - 0.5) * 2.0);
+          if (hasRivers > 0.5) {
+            vec2 scrolledPos = vec2(vPosition.x + scrollOffset, vPosition.z);
+            float notOnValleyFloor = smoothstep(-6.0, -3.0, vElevation);
+            vec2 cellCoord = floor(scrolledPos / 16.0);
+            float neighbors = 0.0;
+            for (float dx = -1.0; dx <= 1.0; dx += 1.0) for (float dz = -1.0; dz <= 1.0; dz += 1.0) if (dx != 0.0 || dz != 0.0) if (hash(cellCoord + vec2(dx, dz)) > 0.2) neighbors += 1.0;
+            float lifePattern = (neighbors >= 2.0 && neighbors <= 7.0) ? 1.0 : (neighbors >= 1.0 && hash(cellCoord) > 0.25) ? 0.9 : 0.0;
+            float forestCoverage = smoothstep(0.2, 0.8, lifePattern * notOnValleyFloor);
+            float elevationDarkness = pow(smoothstep(-10.0, 10.0, vElevation), 0.7);
+            vec3 forestColor = neighbors >= 5.0 ? colorSand * (0.12 + elevationDarkness * 0.08) : neighbors >= 3.0 ? colorSand * (0.20 + elevationDarkness * 0.12) : colorSand * (0.30 + elevationDarkness * 0.15);
+            color = mix(color, forestColor, forestCoverage * 0.95);
+            float isValleyFloor = smoothstep(-3.5, -5.5, vElevation);
+            color = mix(color, riverColor * (0.85 + sin(time * 0.5) * 0.1), isValleyFloor * 0.98);
+          }
+          vec3 lightDir = normalize(vec3(0.6, 0.8, 0.7));
+          float diffuse = max(dot(vNormal, lightDir), 0.0);
+          float frontFacing = max(0.0, dot(vNormal, vec3(0.0, 0.0, 1.0)));
+          float sideFacing = abs(dot(vNormal, vec3(1.0, 0.0, 0.0)));
+          float ambient = 0.35;
+          float shadowFactor = 1.0 - sideFacing * 0.5;
+          float lit = ambient + diffuse * 0.65 * shadowFactor;
+          gl_FragColor = vec4(color * lit, 1.0);
+        }`,
+      side: THREE.DoubleSide
+    });
+    const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
+    scene.add(terrain);
 
-                const meta = document.createElement('div');
-                meta.className = 'meta';
+    const volumeMaterial = new THREE.ShaderMaterial({
+      uniforms: { baseColor: { value: new THREE.Color(0x2F8B7B) }, gridColor: { value: new THREE.Color(0x00FFFF) } },
+      vertexShader: `varying vec3 vPosition, vNormal, vWorldNormal; 
+        void main() { 
+          vPosition = position; 
+          vNormal = normal; 
+          vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); 
+        }`,
+      fragmentShader: `uniform vec3 baseColor, gridColor; 
+        varying vec3 vPosition, vNormal, vWorldNormal;
+        void main() {
+          float gridSize = 4.0; 
+          vec2 grid = abs(fract(vPosition.xy / gridSize - 0.5) - 0.5) / fwidth(vPosition.xy / gridSize);
+          float gridMask = 1.0 - min(min(grid.x, grid.y), 1.0);
+          vec3 color = mix(baseColor, gridColor, gridMask * 0.15);
+          vec3 lightDir = normalize(vec3(0.6, 0.8, 0.7));
+          float diffuse = max(dot(vWorldNormal, lightDir), 0.0);
+          float frontFacing = max(0.0, vWorldNormal.z);
+          float sideFacing = abs(vWorldNormal.x);
+          float ambient = 0.25;
+          float shadowAmount = sideFacing * 0.6;
+          float lit = ambient + diffuse * 0.75 * (1.0 - shadowAmount);
+          lit = mix(lit, lit * 0.5, step(0.9, sideFacing));
+          gl_FragColor = vec4(color * lit, 1.0);
+        }`,
+      side: THREE.DoubleSide
+    });
 
-                const tags = document.createElement('div');
-                tags.className = 'tags';
+    const bottomGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize);
+    bottomGeometry.rotateX(-Math.PI / 2);
+    const bottomPlane = new THREE.Mesh(bottomGeometry, volumeMaterial);
+    bottomPlane.position.y = -volumeDepth;
+    scene.add(bottomPlane);
 
-                project.tags.forEach(tag => {
-                    const tagSpan = document.createElement('span');
-                    tagSpan.className = 'tag';
-                    tagSpan.textContent = tag;
-                    tagSpan.addEventListener('click', function() {
-                        toggleTagFilter(tag);
-                    });
-                    tags.appendChild(tagSpan);
-                });
+    const wallSegments = isMobile ? 48 : 128;
+    function createWallStrip(samples) {
+      const geometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(samples * 2 * 3), normals = new Float32Array(samples * 2 * 3), indices = [];
+      for (let i = 0; i < samples - 1; i++) { const a = i * 2, b = i * 2 + 1, c = (i + 1) * 2, d = (i + 1) * 2 + 1; indices.push(a, b, c, b, d, c); }
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+      geometry.setIndex(indices);
+      return geometry;
+    }
+    const frontWallGeometry = createWallStrip(wallSegments), frontWall = new THREE.Mesh(frontWallGeometry, volumeMaterial); scene.add(frontWall);
+    const backWallGeometry = createWallStrip(wallSegments), backWall = new THREE.Mesh(backWallGeometry, volumeMaterial); scene.add(backWall);
+    const leftWallGeometry = createWallStrip(wallSegments), leftWall = new THREE.Mesh(leftWallGeometry, volumeMaterial); scene.add(leftWall);
+    const rightWallGeometry = createWallStrip(wallSegments), rightWall = new THREE.Mesh(rightWallGeometry, volumeMaterial); scene.add(rightWall);
 
-                meta.appendChild(tags);
+    const heliGroup = new THREE.Group();
+    heliGroup.position.set(0, 50, 0);
+    heliGroup.scale.set(2, 2, 2);
+    scene.add(heliGroup);
 
-                // Check if this is a modal project
-                if (project.modal) {
-                    const button = document.createElement('button');
-                    button.textContent = 'Explore →';
-                    button.addEventListener('click', function() {
-                        openTerrainModal();
-                    });
-                    meta.appendChild(button);
-                } else {
-                    const link = document.createElement('a');
-                    link.href = project.url;
-                    link.textContent = 'Visit Site →';
-                    meta.appendChild(link);
-                }
+    function createFallbackShip() {
+      const fuselageMat = new THREE.MeshStandardMaterial({ color: 0x2a1a3a, metalness: 0.8, roughness: 0.3, emissive: 0x1a0a2a, emissiveIntensity: 0.2 });
+      const fuselageGeom = new THREE.SphereGeometry(3, 16, 12);
+      const fuselage = new THREE.Mesh(fuselageGeom, fuselageMat);
+      fuselage.scale.set(3, 1, 1);
+      heliGroup.add(fuselage);
 
-                article.appendChild(heading);
-                article.appendChild(description);
-                article.appendChild(meta);
+      const cockpitMat = new THREE.MeshStandardMaterial({ color: 0x4488ff, metalness: 0.9, roughness: 0.1, emissive: 0x2244aa, emissiveIntensity: 0.3 });
+      const cockpit = new THREE.Mesh(new THREE.SphereGeometry(1.5, 12, 8), cockpitMat);
+      cockpit.position.set(5, 0.5, 0);
+      cockpit.scale.set(1.5, 0.8, 1);
+      heliGroup.add(cockpit);
 
-                return article;
-            }
+      const wingMat = new THREE.MeshStandardMaterial({ color: 0x3a2a4a, metalness: 0.7, roughness: 0.4 });
+      const wingGeom = new THREE.BoxGeometry(6, 0.4, 12);
+      const wings = new THREE.Mesh(wingGeom, wingMat);
+      wings.position.set(-2, 0, 0);
+      heliGroup.add(wings);
 
-            // Function to set up filtering
-            function setupFiltering() {
-                const activeFilters = document.querySelector('.active-filters');
-                const activeTagList = document.getElementById('active-tag-list');
-                const clearFiltersBtn = document.getElementById('clear-filters');
+      const tailGeom = new THREE.BoxGeometry(4, 4, 0.4);
+      const tailV = new THREE.Mesh(tailGeom, wingMat);
+      tailV.position.set(-7, 2, 0);
+      heliGroup.add(tailV);
+      const tailH = new THREE.Mesh(new THREE.BoxGeometry(2, 0.4, 6), wingMat);
+      tailH.position.set(-7, 0, 0);
+      heliGroup.add(tailH);
 
-                clearFiltersBtn.addEventListener('click', function() {
-                    activeFiltersArray = [];
-                    const allTags = document.querySelectorAll('.tag');
-                    allTags.forEach(tag => tag.classList.remove('active'));
-                    updateFiltering();
-                });
-            }
+      const engineMat = new THREE.MeshBasicMaterial({ color: 0xFF6600 });
+      const engine1 = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.2, 2, 8), engineMat);
+      engine1.rotation.z = Math.PI / 2;
+      engine1.position.set(-10, 0, 2);
+      heliGroup.add(engine1);
+      const engine2 = engine1.clone();
+      engine2.position.set(-10, 0, -2);
+      heliGroup.add(engine2);
+    }
 
-            // Store active filters
-            let activeFiltersArray = [];
+    createFallbackShip();
 
-            // Function to toggle a tag filter
-            function toggleTagFilter(tagText) {
-                const tags = document.querySelectorAll('.tag');
-                let tagElement = null;
+    const loader = new THREE.GLTFLoader();
+    loader.load('https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/low-poly-spaceship/model.gltf',
+      (gltf) => {
+        while(heliGroup.children.length > 0) heliGroup.remove(heliGroup.children[0]);
+        const shipModel = gltf.scene;
+        const box = new THREE.Box3().setFromObject(shipModel);
+        const size = box.getSize(new THREE.Vector3());
+        const scale = 25 / Math.max(size.x, size.y, size.z);
+        shipModel.scale.set(scale, scale, scale);
+        const center = box.getCenter(new THREE.Vector3());
+        shipModel.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
+        shipModel.rotation.y = Math.PI / 2;
+        heliGroup.add(shipModel);
+      },
+      () => {},
+      () => {}
+    );
 
-                tags.forEach(tag => {
-                    if (tag.textContent.trim() === tagText) {
-                        tagElement = tag;
-                    }
-                });
+    const animalGroup = new THREE.Group();
+    const polarBearMat = new THREE.MeshStandardMaterial({ color: 0xF5F5F5, roughness: 0.8 });
+    const penguinBodyMat = new THREE.MeshStandardMaterial({ color: 0x212121, roughness: 0.6 });
+    const penguinBellyMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.7 });
+    const animalStep = isMobile ? 60 : 35;
+    for (let x = -80; x <= 80; x += animalStep) {
+      for (let z = -80; z <= 80; z += animalStep) {
+        const animalObj = new THREE.Group();
+        const px = x + (Math.random() - 0.5) * 20, pz = z + (Math.random() - 0.5) * 20;
+        if (Math.random() > 0.5) {
+          const body = new THREE.Mesh(new THREE.BoxGeometry(3, 1.5, 4), polarBearMat); body.position.y = 1; animalObj.add(body);
+          const head = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.5, 1.8), polarBearMat); head.position.set(0, 1.2, 2.5); animalObj.add(head);
+        } else {
+          const body = new THREE.Mesh(new THREE.SphereGeometry(0.8, 8, 8), penguinBodyMat); body.scale.y = 1.5; body.position.y = 1.2; animalObj.add(body);
+          const belly = new THREE.Mesh(new THREE.SphereGeometry(0.6, 8, 8), penguinBellyMat); belly.scale.y = 1.3; belly.position.set(0, 1.2, 0.4); animalObj.add(belly);
+        }
+        animalObj.userData = { initialX: px, initialZ: pz };
+        animalObj.position.set(px, getTerrainHeight(px, pz), pz);
+        animalObj.rotation.y = Math.random() * Math.PI * 2;
+        animalGroup.add(animalObj);
+      }
+    }
+    animalGroup.visible = false;
+    scene.add(animalGroup);
 
-                if (!tagElement) return;
+    const keyLight = new THREE.DirectionalLight(0x00CED1, 1.0);
+    keyLight.position.set(80, 200, 120);
+    scene.add(keyLight);
+    const fillLight = new THREE.DirectionalLight(0xE8A87C, 0.5);
+    fillLight.position.set(-120, 120, -80);
+    scene.add(fillLight);
+    const ambientLight = new THREE.AmbientLight(0x00CED1, 0.6);
+    scene.add(ambientLight);
 
-                if (tagElement.classList.contains('active')) {
-                    tagElement.classList.remove('active');
-                    const index = activeFiltersArray.indexOf(tagText);
-                    if (index > -1) {
-                        activeFiltersArray.splice(index, 1);
-                    }
-                } else {
-                    tagElement.classList.add('active');
-                    if (!activeFiltersArray.includes(tagText)) {
-                        activeFiltersArray.push(tagText);
-                    }
-                }
+    let time = 0, scrollOffset = 0;
+    const scrollSpeed = 32;
+    
+    let barrelRollActive = false;
+    let barrelRollProgress = 0;
+    const barrelRollDuration = 1.2;
 
-                updateFiltering();
-            }
+    function updateWalls() {
+      const halfSize = terrainSize / 2;
+      [[frontWallGeometry, halfSize, true], [backWallGeometry, -halfSize, true], [leftWallGeometry, -halfSize, false], [rightWallGeometry, halfSize, false]].forEach(([geom, coord, isZ]) => {
+        const arr = geom.attributes.position.array;
+        for (let i = 0; i < wallSegments; i++) {
+          const t = i / (wallSegments - 1);
+          const primary = -halfSize + t * terrainSize;
+          const x = isZ ? primary : coord, z = isZ ? coord : primary;
+          const height = getTerrainHeight(x + scrollOffset, z);
+          arr[i * 6] = x; arr[i * 6 + 1] = height; arr[i * 6 + 2] = z;
+          arr[i * 6 + 3] = x; arr[i * 6 + 4] = -volumeDepth; arr[i * 6 + 5] = z;
+        }
+        geom.attributes.position.needsUpdate = true;
+        geom.computeVertexNormals();
+      });
+    }
 
-            // Function to update filtering
-            function updateFiltering() {
-                const projects = document.querySelectorAll('.project');
-                const activeFilters = document.querySelector('.active-filters');
-                const activeTagList = document.getElementById('active-tag-list');
+    function animate() {
+      requestAnimationFrame(animate);
+      time += 0.016;
+      scrollOffset += scrollSpeed * 0.016;
 
-                if (activeFiltersArray.length > 0) {
-                    activeTagList.textContent = activeFiltersArray.join(', ');
-                    activeFilters.classList.add('visible');
-                } else {
-                    activeFilters.classList.remove('visible');
-                    projects.forEach(project => {
-                        project.style.display = 'block';
-                        project.style.animation = 'unfold 0.5s ease-out';
-                    });
-                    return;
-                }
+      terrainMaterial.uniforms.time.value = time;
+      terrainMaterial.uniforms.scrollOffset.value = scrollOffset;
 
-                projects.forEach(project => {
-                    const projectTags = Array.from(project.querySelectorAll('.tag')).map(tag => tag.textContent.trim());
-                    const hasAllFilters = activeFiltersArray.every(filter => projectTags.includes(filter));
+      for (let i = 0; i < pos.length; i += 3) pos[i + 1] = getTerrainHeight(pos[i] + scrollOffset, pos[i + 2]);
+      posAttr.needsUpdate = true;
+      terrainGeometry.computeVertexNormals();
 
-                    if (hasAllFilters) {
-                        project.style.display = 'block';
-                        project.style.animation = 'unfold 0.5s ease-out';
-                    } else {
-                        project.style.display = 'none';
-                    }
-                });
-            }
+      updateWalls();
 
-            function getLocalData() {
-                return [
-                    {
-                        "title": "3D Terrain Explorer",
-                        "description": "Interactive 3D terrain visualization with scrolling topology, multiple biomes (desert, jungle, arctic), and a Red Rising-inspired spaceship. Built with Three.js.",
-                        "modal": true,
-                        "tags": ["personal", "3d", "experimental"]
-                    },
-                    {
-                        "title": "Lizzy's Green Plate",
-                        "description": "A home-brewed and home-served website to keep track of the dishes my wife keeps making.",
-                        "url": "https://greenplate.skatzafrax.com",
-                        "tags": ["personal", "food"]
-                    },
-                    {
-                        "title": "Jeopardy!",
-                        "description": "Generate Jeopardy! categories with AI.",
-                        "url": "https://jeopardy.skatzafrax.com",
-                        "tags": ["personal", "ai"]
-                    },
-                    {
-                        "title": "Haskell Calculator",
-                        "description": "Practicing using Haskell on my server.",
-                        "url": "https://haskell-app.skatzafrax.com",
-                        "tags": ["personal", "coding"]
-                    },
-                    {
-                        "title": "Running",
-                        "description": "Mapping Strava data over time.",
-                        "url": "https://strava-kappa.vercel.app/map.html",
-                        "tags": ["personal", "fitness"]
-                    },
-                    {
-                        "title": "Dots",
-                        "description": "Just playing around with using the DOM as an interactive canvas.",
-                        "url": "#",
-                        "tags": ["personal", "experimental"]
-                    },
-                    {
-                        "title": "NightSky",
-                        "description": "Identifying celestial events above me now.",
-                        "url": "https://nightsky.skatzafrax.com",
-                        "tags": ["personal", "astronomy"]
-                    },
-                    {
-                        "title": "Wedding Site",
-                        "description": "First test collecting info with a home-spun site.",
-                        "url": "https://lukeandlizzy2023.ca",
-                        "tags": ["personal", "event"]
-                    },
-                    {
-                        "title": "Baby Shower",
-                        "description": "Trying a funny parallax effect for our baby shower site.",
-                        "url": "https://berzinsbabyshower.com",
-                        "tags": ["personal", "family"]
-                    }
-                ];
-            }
-
-            // Modal controls
-            closeModalBtn.addEventListener('click', closeTerrainModal);
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal) {
-                    closeTerrainModal();
-                }
-            });
-
-            function openTerrainModal() {
-                modal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-
-                if (!terrainInitialized) {
-                    initTerrain();
-                    terrainInitialized = true;
-                }
-            }
-
-            function closeTerrainModal() {
-                modal.classList.remove('active');
-                document.body.style.overflow = '';
-            }
-
-            // Parallax scrolling effect
-            const parallaxBg = document.querySelector('.parallax-bg');
-            window.addEventListener('scroll', function() {
-                if (parallaxBg) {
-                    const scrollPosition = window.scrollY;
-                    const translateX = -scrollPosition * 0.4;
-                    parallaxBg.style.transform = `translateX(${translateX}px)`;
-                }
-            });
-
-            // Terrain initialization function
-            function initTerrain() {
-                const container = document.getElementById('terrain-container');
-
-                // Create iframe to load the terrain visualization
-                const iframe = document.createElement('iframe');
-                iframe.id = 'terrain-iframe';
-                iframe.src = 'terrain-cross-section-static-camera.html';
-                iframe.title = '3D Terrain Explorer';
-
-                container.appendChild(iframe);
-            }
+      if (animalGroup.visible) {
+        animalGroup.children.forEach(a => {
+          let newX = a.userData.initialX - (scrollOffset % (terrainSize * 2));
+          while (newX < -terrainSize / 2) newX += terrainSize;
+          while (newX > terrainSize / 2) newX -= terrainSize;
+          a.position.set(newX, getTerrainHeight(a.userData.initialX, a.userData.initialZ), a.userData.initialZ);
         });
-    </script>
-</body>
+      }
 
+      // Base position
+      let baseX = Math.sin(time * 0.8) * 30 + Math.sin(time * 1.6) * 15;
+      let baseZ = Math.sin(time * 0.7) * 22 + Math.cos(time * 1.2) * 12;
+      let baseY = 50 + Math.sin(time * 0.9) * 10 + Math.sin(time * 2.2) * 4;
+      
+      let rollAngle = Math.sin(time * 0.4) * 0.06;
+      let pitchAngle = Math.sin(time * 0.7) * 0.12;
+      let yawAngle = Math.sin(time * 0.5) * 0.2;
+      
+      // Barrel roll - forward loop
+      if (barrelRollActive) {
+        barrelRollProgress += 0.016 / barrelRollDuration;
+        if (barrelRollProgress >= 1.0) {
+          barrelRollProgress = 0;
+          barrelRollActive = false;
+        } else {
+          const t = barrelRollProgress;
+          const loopAngle = t * Math.PI * 2;
+          const loopRadius = 30;
+          baseY += Math.sin(loopAngle) * loopRadius;
+          baseZ += (1 - Math.cos(loopAngle)) * loopRadius;
+          pitchAngle = -loopAngle;
+        }
+      }
+      
+      heliGroup.position.x = baseX;
+      heliGroup.position.y = baseY;
+      heliGroup.position.z = baseZ;
+      heliGroup.rotation.y = yawAngle;
+      heliGroup.rotation.x = pitchAngle;
+      heliGroup.rotation.z = rollAngle;
+
+      document.getElementById('altitude').textContent = Math.floor(heliGroup.position.y * 10 + 500).toString().padStart(4, '0');
+      document.getElementById('speed').textContent = Math.floor(150 + Math.sin(time) * 20).toString().padStart(3, '0');
+      document.getElementById('heading').textContent = Math.floor((Math.atan2(Math.sin(time * 0.3), Math.cos(time * 0.3)) * 180 / Math.PI + 360) % 360).toString().padStart(3, '0');
+      document.getElementById('lat').textContent = (47.3892 + time * 0.01).toFixed(4);
+      document.getElementById('lon').textContent = (-122.4821 + time * 0.0001).toFixed(4);
+
+      renderer.render(scene, camera);
+    }
+
+    function updateRendererSize() {
+      const container = document.getElementById('canvas-container');
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    }
+    
+    window.addEventListener('resize', updateRendererSize);
+    setTimeout(updateRendererSize, 0);
+
+    const themes = {
+      desert: {
+        background: 0x00CED1, fog: 0x00CED1, title: 'DESERT RECON // XS-4',
+        colorSand: new THREE.Color(0xDEB8A0), colorDune: new THREE.Color(0xE8A87C), colorPeak: new THREE.Color(0x8B2942),
+        volumeBase: new THREE.Color(0x2F8B7B), volumeGrid: new THREE.Color(0x00FFFF),
+        keyLightColor: 0xFFFFFF, fillLightColor: 0xE8A87C, ambientColor: 0x00CED1,
+        hasRivers: false, riverColor: new THREE.Color(0x00FFFF),
+        hudColor: '#E8A87C', hudTitleColor: '#8B2942', hudLabelColor: '#DEB8A0', hudValueColor: '#00FFFF',
+        showAnimals: false
+      },
+      arctic: {
+        background: 0xB0E0E6, fog: 0xC4D4E0, title: 'ARCTIC RECON // XS-4',
+        colorSand: new THREE.Color(0xD6E5F0), colorDune: new THREE.Color(0xF0F8FF), colorPeak: new THREE.Color(0x4A6B8A),
+        volumeBase: new THREE.Color(0x5D6D7E), volumeGrid: new THREE.Color(0x7FFFD4),
+        keyLightColor: 0xF0F8FF, fillLightColor: 0xB0E0E6, ambientColor: 0xE6F2F7,
+        hasRivers: true, riverColor: new THREE.Color(0xA8C8DC),
+        hudColor: '#4A6B8A', hudTitleColor: '#2C3E50', hudLabelColor: '#A8C8DC', hudValueColor: '#7FFFD4',
+        showAnimals: true
+      },
+      jungle: {
+        background: 0xA8BF6A, fog: 0xC9B458, title: 'JUNGLE RECON // XS-4',
+        colorSand: new THREE.Color(0xD4A857), colorDune: new THREE.Color(0xC46A41), colorPeak: new THREE.Color(0x1B4D3E),
+        volumeBase: new THREE.Color(0x7A6840), volumeGrid: new THREE.Color(0x39FF14),
+        keyLightColor: 0xC9B458, fillLightColor: 0xA8BF6A, ambientColor: 0xA8BF6A,
+        hasRivers: true, riverColor: new THREE.Color(0x0277BD),
+        hudColor: '#6B8E23', hudTitleColor: '#1B4D3E', hudLabelColor: '#C46A41', hudValueColor: '#39FF14',
+        showAnimals: false
+      }
+    };
+
+    function applyTheme(themeName) {
+      const t = themes[themeName];
+      renderer.setClearColor(t.background);
+      scene.fog.color.setHex(t.fog);
+      terrainMaterial.uniforms.colorSand.value = t.colorSand;
+      terrainMaterial.uniforms.colorDune.value = t.colorDune;
+      terrainMaterial.uniforms.colorPeak.value = t.colorPeak;
+      terrainMaterial.uniforms.hasRivers.value = t.hasRivers ? 1.0 : 0.0;
+      terrainMaterial.uniforms.riverColor.value = t.riverColor;
+      volumeMaterial.uniforms.baseColor.value = t.volumeBase;
+      volumeMaterial.uniforms.gridColor.value = t.volumeGrid;
+      keyLight.color.setHex(t.keyLightColor);
+      fillLight.color.setHex(t.fillLightColor);
+      ambientLight.color.setHex(t.ambientColor);
+      animalGroup.visible = t.showAnimals;
+      document.querySelector('.hud-top-left .title').textContent = `◈ ${t.title}`;
+      document.querySelectorAll('.hud').forEach(h => h.style.color = t.hudColor);
+      document.querySelectorAll('.title').forEach(h => h.style.color = t.hudTitleColor);
+      document.querySelectorAll('.label').forEach(h => h.style.color = t.hudLabelColor);
+      document.querySelectorAll('.value').forEach(h => h.style.color = t.hudValueColor);
+      document.querySelectorAll('.theme-btn').forEach(b => { b.classList.remove('active'); if (b.dataset.theme === themeName) b.classList.add('active'); });
+    }
+
+    document.querySelectorAll('.theme-btn[data-theme]').forEach(btn => btn.addEventListener('click', () => applyTheme(btn.dataset.theme)));
+    
+    document.getElementById('barrel-roll-btn').addEventListener('click', () => {
+      if (!barrelRollActive) {
+        barrelRollActive = true;
+        barrelRollProgress = 0;
+      }
+    });
+
+    updateWalls();
+    animate();
+  </script>
+</body>
 </html>
