@@ -8,13 +8,15 @@
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #0a0a0a; overflow: hidden; font-family: 'Share Tech Mono', monospace; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
-    #canvas-container { position: fixed; top: 0; left: 0; right: 0; bottom: 80px; }
+    #canvas-container { position: fixed; top: 0; left: 0; right: 0; bottom: 115px; }
     canvas { display: block; width: 100%; height: 100%; }
-    .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; height: 80px; background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%); border-top: 2px solid #333; display: flex; align-items: center; justify-content: center; gap: 20px; z-index: 102; }
+    .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; height: 115px; background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%); border-top: 2px solid #333; display: flex; align-items: center; justify-content: center; z-index: 102; padding: 12px 0; }
+    .button-container { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .action-controls { display: flex; gap: 12px; justify-content: center; align-items: center; }
     .hud { position: fixed; color: #8B2942; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; pointer-events: none; text-shadow: 0 0 8px rgba(0,0,0,0.8); background: rgba(0,0,0,0.25); backdrop-filter: blur(8px); padding: 15px; border-radius: 8px; z-index: 101; }
     .hud-top-left { top: 20px; left: 20px; }
     .hud-top-right { top: 20px; right: 20px; text-align: right; }
-    .hud-bottom-left { bottom: 100px; left: 20px; }
+    .hud-bottom-left { bottom: 130px; left: 20px; }
     .title { font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 10px; color: #8B2942; }
     .data-row { margin: 5px 0; }
     .label { color: #E8A87C; font-weight: 600; }
@@ -26,8 +28,43 @@
     .theme-btn.desert { border-color: #E8A87C; color: #E8A87C; }
     .theme-btn.jungle { border-color: #39FF14; color: #39FF14; }
     .theme-btn.arctic { border-color: #7FFFD4; color: #7FFFD4; }
-    .theme-btn.barrel-roll { border-color: #FF6600; color: #FF6600; }
-    .theme-btn.barrel-roll:hover { background: rgba(255, 102, 0, 0.2); }
+    .theme-btn.barrel-roll { 
+      border-color: #FF2A2A; 
+      color: #FFD700;
+      background: linear-gradient(135deg, rgba(255,42,42,0.15) 0%, rgba(0,0,0,0.7) 50%, rgba(255,215,0,0.1) 100%);
+      border-width: 2px;
+      border-style: solid;
+      position: relative;
+      clip-path: polygon(12px 0%, 100% 0%, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0% 100%, 0% 12px);
+      text-shadow: 0 0 10px rgba(255,215,0,0.9), 0 0 20px rgba(255,42,42,0.5);
+      box-shadow: inset 0 0 20px rgba(255,42,42,0.2), 0 0 15px rgba(255,42,42,0.4);
+      font-weight: 800;
+      letter-spacing: 3px;
+    }
+    .theme-btn.barrel-roll::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #FF2A2A, #FFD700, #FF2A2A, transparent);
+    }
+    .theme-btn.barrel-roll::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(255,215,0,0.6), rgba(255,42,42,0.6), transparent);
+    }
+    .theme-btn.barrel-roll:hover { 
+      background: linear-gradient(135deg, rgba(255,42,42,0.3) 0%, rgba(0,0,0,0.5) 50%, rgba(255,215,0,0.2) 100%);
+      box-shadow: inset 0 0 30px rgba(255,42,42,0.3), 0 0 30px rgba(255,42,42,0.6), 0 0 10px rgba(255,215,0,0.4);
+      text-shadow: 0 0 15px rgba(255,215,0,1), 0 0 30px rgba(255,42,42,0.8);
+      border-color: #FFD700;
+    }
     .theme-btn.active { transform: scale(1.05); background: rgba(255,255,255,0.2); box-shadow: 0 0 20px currentColor; }
     .theme-btn:hover { background: rgba(255,255,255,0.15); box-shadow: 0 0 15px currentColor; }
     
@@ -45,9 +82,11 @@
       .hud-bottom-left { bottom: 95px; left: 10px; }
       .title { font-size: 12px; margin-bottom: 6px; }
       .data-row { margin: 3px 0; }
-      #canvas-container { bottom: 85px; }
-      .bottom-panel { height: 85px; padding: 10px; }
+      #canvas-container { bottom: 120px; }
+      .bottom-panel { height: 120px; padding: 10px; }
+      .button-container { gap: 8px; }
       .theme-controls { gap: 8px; }
+      .action-controls { gap: 8px; }
       .theme-btn { padding: 10px 14px; font-size: 10px; letter-spacing: 1px; min-height: 44px; min-width: 44px; }
     }
     
@@ -58,10 +97,12 @@
       .hud-top-left { top: 8px; left: 8px; padding: 8px; }
       .title { font-size: 10px; }
       .hud { font-size: 9px; }
-      #canvas-container { bottom: 75px; }
-      .bottom-panel { height: 75px; padding: 8px; }
+      #canvas-container { bottom: 105px; }
+      .bottom-panel { height: 105px; padding: 8px; }
+      .button-container { gap: 6px; }
       .theme-btn { padding: 8px 10px; font-size: 9px; min-height: 40px; }
       .theme-controls { gap: 6px; }
+      .action-controls { gap: 6px; }
     }
   </style>
 </head>
@@ -86,11 +127,16 @@
   </div>
 
   <div class="bottom-panel">
-    <div class="theme-controls">
-      <button class="theme-btn desert active" data-theme="desert">Desert</button>
-      <button class="theme-btn jungle" data-theme="jungle">Jungle</button>
-      <button class="theme-btn arctic" data-theme="arctic">Arctic</button>
-      <button class="theme-btn barrel-roll" id="barrel-roll-btn">🛩 Roll</button>
+    <div class="button-container">
+      <div class="theme-controls">
+        <button class="theme-btn desert active" data-theme="desert">Desert</button>
+        <button class="theme-btn jungle" data-theme="jungle">Jungle</button>
+        <button class="theme-btn arctic" data-theme="arctic">Arctic</button>
+      </div>
+      <div class="action-controls">
+        <button class="theme-btn barrel-roll" id="loop-btn">🛩 Roll</button>
+        <button class="theme-btn barrel-roll" id="barrel-roll-btn">🔃 Loop</button>
+      </div>
     </div>
   </div>
 
@@ -237,18 +283,25 @@
       uniforms: { 
         baseColor: { value: new THREE.Color(0x2F8B7B) }, 
         gridColor: { value: new THREE.Color(0x00FFFF) },
-        isMobile: { value: isMobile ? 1.0 : 0.0 }
+        edgeColor: { value: new THREE.Color(0x00FFFF) },
+        isMobile: { value: isMobile ? 1.0 : 0.0 },
+        volumeDepth: { value: volumeDepth }
       },
-      vertexShader: `varying vec3 vPosition, vNormal, vWorldNormal; 
+      vertexShader: `
+        attribute float isTop;
+        varying vec3 vPosition, vNormal, vWorldNormal;
+        varying float vIsTop;
         void main() { 
           vPosition = position; 
           vNormal = normal; 
           vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+          vIsTop = isTop;
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); 
         }`,
-      fragmentShader: `uniform vec3 baseColor, gridColor;
-        uniform float isMobile;
+      fragmentShader: `uniform vec3 baseColor, gridColor, edgeColor;
+        uniform float isMobile, volumeDepth;
         varying vec3 vPosition, vNormal, vWorldNormal;
+        varying float vIsTop;
         void main() {
           vec3 color = baseColor;
           
@@ -262,19 +315,17 @@
           
           float lit;
           if (isMobile > 0.5) {
-            // Simple flat shading on mobile
             lit = 0.7;
           } else {
-            // Full lighting on desktop
             vec3 lightDir = normalize(vec3(0.6, 0.8, 0.7));
             float diffuse = max(dot(vWorldNormal, lightDir), 0.0);
-            float frontFacing = max(0.0, vWorldNormal.z);
-            float sideFacing = abs(vWorldNormal.x);
-            float ambient = 0.25;
-            float shadowAmount = sideFacing * 0.6;
-            lit = ambient + diffuse * 0.75 * (1.0 - shadowAmount);
-            lit = mix(lit, lit * 0.5, step(0.9, sideFacing));
+            float ambient = 0.35;
+            lit = ambient + diffuse * 0.65;
           }
+          
+          // Edge highlight - sharp neon line at terrain edge
+          float edgeGlow = step(0.92, vIsTop);
+          color = mix(color, edgeColor * 2.0, edgeGlow);
           
           gl_FragColor = vec4(color * lit, 1.0);
         }`,
@@ -290,10 +341,18 @@
     const wallSegments = isMobile ? 32 : 128;
     function createWallStrip(samples) {
       const geometry = new THREE.BufferGeometry();
-      const positions = new Float32Array(samples * 2 * 3), normals = new Float32Array(samples * 2 * 3), indices = [];
+      const positions = new Float32Array(samples * 2 * 3);
+      const normals = new Float32Array(samples * 2 * 3);
+      const isTop = new Float32Array(samples * 2); // 1.0 for top vertices, 0.0 for bottom
+      const indices = [];
+      for (let i = 0; i < samples; i++) {
+        isTop[i * 2] = 1.0;     // even = top
+        isTop[i * 2 + 1] = 0.0; // odd = bottom
+      }
       for (let i = 0; i < samples - 1; i++) { const a = i * 2, b = i * 2 + 1, c = (i + 1) * 2, d = (i + 1) * 2 + 1; indices.push(a, b, c, b, d, c); }
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
       geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+      geometry.setAttribute('isTop', new THREE.BufferAttribute(isTop, 1));
       geometry.setIndex(indices);
       return geometry;
     }
@@ -404,6 +463,10 @@
     let barrelRollActive = false;
     let barrelRollProgress = 0;
     const barrelRollDuration = 1.2;
+    
+    let loopActive = false;
+    let loopProgress = 0;
+    const loopDuration = 1.5;
 
     function updateWalls() {
       const halfSize = terrainSize / 2;
@@ -458,7 +521,7 @@
       let pitchAngle = Math.sin(time * 0.7) * 0.12;
       let yawAngle = Math.sin(time * 0.5) * 0.2;
       
-      // Barrel roll - forward loop
+      // Barrel roll - rolls around Z axis while moving forward through a hoop
       if (barrelRollActive) {
         barrelRollProgress += 0.016 / barrelRollDuration;
         if (barrelRollProgress >= 1.0) {
@@ -466,11 +529,35 @@
           barrelRollActive = false;
         } else {
           const t = barrelRollProgress;
-          const loopAngle = t * Math.PI * 2;
-          const loopRadius = 30;
-          baseY += Math.sin(loopAngle) * loopRadius;
-          baseZ += (1 - Math.cos(loopAngle)) * loopRadius;
-          pitchAngle = -loopAngle;
+          const angle = t * Math.PI * 2;
+          const loopRadius = 20;
+          
+          // Full circle that returns to start, shifted up
+          baseY += Math.sin(angle) * loopRadius + (1 - Math.cos(angle)) * 25;
+          baseZ += (Math.cos(angle) - 1) * loopRadius;
+          
+          // Roll around Z axis (wings tip up and over)
+          rollAngle = angle;
+        }
+      }
+      
+      // Vertical loop - pitch loop around X axis (nose up and over)
+      if (loopActive) {
+        loopProgress += 0.016 / loopDuration;
+        if (loopProgress >= 1.0) {
+          loopProgress = 0;
+          loopActive = false;
+        } else {
+          const t = loopProgress;
+          const angle = t * Math.PI * 2;
+          const loopRadius = 60;
+          
+          // Full circle that returns to start
+          baseY += Math.sin(angle) * loopRadius;
+          baseX += (Math.cos(angle) - 1) * loopRadius;
+          
+          // Pitch around X axis (nose goes up and over)
+          pitchAngle = angle;
         }
       }
       
@@ -543,6 +630,7 @@
       terrainMaterial.uniforms.riverColor.value = t.riverColor;
       volumeMaterial.uniforms.baseColor.value = t.volumeBase;
       volumeMaterial.uniforms.gridColor.value = t.volumeGrid;
+      volumeMaterial.uniforms.edgeColor.value = t.volumeGrid;
       keyLight.color.setHex(t.keyLightColor);
       fillLight.color.setHex(t.fillLightColor);
       ambientLight.color.setHex(t.ambientColor);
@@ -561,6 +649,13 @@
       if (!barrelRollActive) {
         barrelRollActive = true;
         barrelRollProgress = 0;
+      }
+    });
+    
+    document.getElementById('loop-btn').addEventListener('click', () => {
+      if (!loopActive) {
+        loopActive = true;
+        loopProgress = 0;
       }
     });
 
