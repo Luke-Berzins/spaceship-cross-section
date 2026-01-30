@@ -2,38 +2,200 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <!-- FIXED: Removed user-scalable=no for accessibility, kept viewport-fit for notched devices -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>XS-4 Terrain Scanner</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap');
+    
+    :root {
+      /* CSS Custom Properties for easier theming */
+      --bottom-panel-height: 115px;
+      --hud-color: #E8A87C;
+      --hud-title-color: #8B2942;
+      --hud-label-color: #DEB8A0;
+      --hud-value-color: #00FFFF;
+      /* Safe area insets for notched devices */
+      --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #0a0a0a; overflow: hidden; font-family: 'Share Tech Mono', monospace; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
-    #canvas-container { position: fixed; top: 0; left: 0; right: 0; bottom: 115px; }
-    canvas { display: block; width: 100%; height: 100%; }
-    .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; height: 115px; background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%); border-top: 2px solid #333; display: flex; align-items: center; justify-content: center; z-index: 102; padding: 12px 0; }
-    .button-container { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-    .action-controls { display: flex; gap: 12px; justify-content: center; align-items: center; }
-    .hud { position: fixed; color: #8B2942; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; pointer-events: none; text-shadow: 0 0 8px rgba(0,0,0,0.8); background: rgba(0,0,0,0.25); backdrop-filter: blur(8px); padding: 15px; border-radius: 8px; z-index: 101; }
+    
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+    
+    body { 
+      background: #0a0a0a; 
+      font-family: 'Share Tech Mono', monospace; 
+      /* FIXED: More specific touch-action */
+      touch-action: manipulation;
+      -webkit-touch-callout: none; 
+      -webkit-user-select: none; 
+      user-select: none;
+      /* Prevent overscroll bounce on iOS */
+      overscroll-behavior: none;
+    }
+    
+    #canvas-container { 
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      right: 0; 
+      bottom: calc(var(--bottom-panel-height) + var(--safe-area-bottom));
+      /* FIXED: Ensure container establishes dimensions before JS reads them */
+      min-height: 0;
+    }
+    
+    canvas { 
+      display: block; 
+      width: 100% !important; 
+      height: 100% !important;
+      /* FIXED: Prevent canvas from causing layout issues */
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    
+    .bottom-panel { 
+      position: fixed; 
+      bottom: 0; 
+      left: 0; 
+      right: 0; 
+      height: calc(var(--bottom-panel-height) + var(--safe-area-bottom));
+      padding-bottom: var(--safe-area-bottom);
+      background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%); 
+      border-top: 2px solid #333; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      z-index: 102; 
+      padding-top: 12px;
+      /* FIXED: Use transform for GPU compositing instead of backdrop-filter */
+      transform: translateZ(0);
+      will-change: transform;
+    }
+    
+    .button-container { 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      gap: 10px; 
+    }
+    
+    .action-controls { 
+      display: flex; 
+      gap: 12px; 
+      justify-content: center; 
+      align-items: center; 
+    }
+    
+    .hud { 
+      position: fixed; 
+      color: var(--hud-title-color); 
+      font-size: 13px; 
+      text-transform: uppercase; 
+      letter-spacing: 2px; 
+      pointer-events: none; 
+      text-shadow: 0 0 8px rgba(0,0,0,0.8); 
+      background: rgba(0,0,0,0.25); 
+      /* FIXED: Removed backdrop-filter for mobile performance - use solid bg instead */
+      padding: 15px; 
+      border-radius: 8px; 
+      z-index: 101;
+      /* FIXED: Force GPU layer */
+      transform: translateZ(0);
+      will-change: transform;
+    }
+    
+    /* FIXED: Add backdrop-filter only for devices that support it well */
+    @supports (backdrop-filter: blur(8px)) {
+      @media (min-width: 769px) {
+        .hud {
+          backdrop-filter: blur(8px);
+          background: rgba(0,0,0,0.15);
+        }
+      }
+    }
+    
     .hud-top-left { top: 20px; left: 20px; }
     .hud-top-right { top: 20px; right: 20px; text-align: right; }
-    .hud-bottom-left { bottom: 130px; left: 20px; }
-    .title { font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 10px; color: #8B2942; }
+    .hud-bottom-left { bottom: calc(var(--bottom-panel-height) + 15px + var(--safe-area-bottom)); left: 20px; }
+    
+    .title { 
+      font-family: 'Orbitron', sans-serif; 
+      font-size: 16px; 
+      font-weight: 700; 
+      margin-bottom: 10px; 
+      color: var(--hud-title-color); 
+    }
+    
     .data-row { margin: 5px 0; }
-    .label { color: #E8A87C; font-weight: 600; }
-    .value { color: #00FFFF; font-weight: 700; }
-    .scanline { position: fixed; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.005) 2px, rgba(0,0,0,0.005) 4px); z-index: 100; }
-    .vignette { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.08) 100%); z-index: 99; }
-    .theme-controls { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; align-items: center; padding: 0 10px; }
-    .theme-btn { padding: 14px 24px; font-family: 'Share Tech Mono', monospace; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; border: 2px solid; background: rgba(0,0,0,0.5); cursor: pointer; transition: all 0.3s ease; font-weight: 700; border-radius: 4px; white-space: nowrap; }
+    .label { color: var(--hud-label-color); font-weight: 600; }
+    .value { color: var(--hud-value-color); font-weight: 700; }
+    
+    /* FIXED: Simplified scanline effect for mobile */
+    .scanline { 
+      position: fixed; 
+      inset: 0; 
+      pointer-events: none; 
+      z-index: 100;
+      opacity: 0.3;
+    }
+    
+    @media (min-width: 769px) {
+      .scanline {
+        background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.005) 2px, rgba(0,0,0,0.005) 4px);
+        opacity: 1;
+      }
+    }
+    
+    .vignette { 
+      position: fixed; 
+      inset: 0; 
+      pointer-events: none; 
+      background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.08) 100%); 
+      z-index: 99; 
+    }
+    
+    .theme-controls { 
+      display: flex; 
+      gap: 12px; 
+      flex-wrap: wrap; 
+      justify-content: center; 
+      align-items: center; 
+      padding: 0 10px; 
+    }
+    
+    .theme-btn { 
+      padding: 14px 24px; 
+      font-family: 'Share Tech Mono', monospace; 
+      font-size: 13px; 
+      text-transform: uppercase; 
+      letter-spacing: 2px; 
+      border: 2px solid; 
+      background: rgba(0,0,0,0.5); 
+      cursor: pointer; 
+      transition: all 0.3s ease; 
+      font-weight: 700; 
+      border-radius: 4px; 
+      white-space: nowrap;
+      /* FIXED: Better touch targets */
+      min-height: 48px;
+      min-width: 48px;
+      /* FIXED: Prevent tap highlight on mobile */
+      -webkit-tap-highlight-color: transparent;
+    }
+    
     .theme-btn.desert { border-color: #E8A87C; color: #E8A87C; }
     .theme-btn.jungle { border-color: #39FF14; color: #39FF14; }
     .theme-btn.arctic { border-color: #7FFFD4; color: #7FFFD4; }
+    
     .theme-btn.barrel-roll { 
       border-color: #FF2A2A; 
       color: #FFD700;
       background: linear-gradient(135deg, rgba(255,42,42,0.15) 0%, rgba(0,0,0,0.7) 50%, rgba(255,215,0,0.1) 100%);
-      border-width: 2px;
-      border-style: solid;
       position: relative;
       clip-path: polygon(12px 0%, 100% 0%, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0% 100%, 0% 12px);
       text-shadow: 0 0 10px rgba(255,215,0,0.9), 0 0 20px rgba(255,42,42,0.5);
@@ -41,6 +203,7 @@
       font-weight: 800;
       letter-spacing: 3px;
     }
+    
     .theme-btn.barrel-roll::before {
       content: '';
       position: absolute;
@@ -50,6 +213,7 @@
       height: 2px;
       background: linear-gradient(90deg, transparent, #FF2A2A, #FFD700, #FF2A2A, transparent);
     }
+    
     .theme-btn.barrel-roll::after {
       content: '';
       position: absolute;
@@ -59,68 +223,128 @@
       height: 2px;
       background: linear-gradient(90deg, transparent, rgba(255,215,0,0.6), rgba(255,42,42,0.6), transparent);
     }
-    .theme-btn.barrel-roll:hover { 
+    
+    /* FIXED: Use active state instead of hover for mobile */
+    .theme-btn:active,
+    .theme-btn.barrel-roll:active { 
       background: linear-gradient(135deg, rgba(255,42,42,0.3) 0%, rgba(0,0,0,0.5) 50%, rgba(255,215,0,0.2) 100%);
-      box-shadow: inset 0 0 30px rgba(255,42,42,0.3), 0 0 30px rgba(255,42,42,0.6), 0 0 10px rgba(255,215,0,0.4);
-      text-shadow: 0 0 15px rgba(255,215,0,1), 0 0 30px rgba(255,42,42,0.8);
-      border-color: #FFD700;
+      transform: scale(0.98);
     }
-    .theme-btn.active { transform: scale(1.05); background: rgba(255,255,255,0.2); box-shadow: 0 0 20px currentColor; }
-    .theme-btn:hover { background: rgba(255,255,255,0.15); box-shadow: 0 0 15px currentColor; }
+    
+    @media (hover: hover) {
+      .theme-btn:hover { 
+        background: rgba(255,255,255,0.15); 
+        box-shadow: 0 0 15px currentColor; 
+      }
+      .theme-btn.barrel-roll:hover { 
+        background: linear-gradient(135deg, rgba(255,42,42,0.3) 0%, rgba(0,0,0,0.5) 50%, rgba(255,215,0,0.2) 100%);
+        box-shadow: inset 0 0 30px rgba(255,42,42,0.3), 0 0 30px rgba(255,42,42,0.6), 0 0 10px rgba(255,215,0,0.4);
+        text-shadow: 0 0 15px rgba(255,215,0,1), 0 0 30px rgba(255,42,42,0.8);
+        border-color: #FFD700;
+      }
+    }
+    
+    .theme-btn.active { 
+      transform: scale(1.05); 
+      background: rgba(255,255,255,0.2); 
+      box-shadow: 0 0 20px currentColor; 
+    }
     
     /* Tablet */
     @media (max-width: 900px) {
+      :root {
+        --bottom-panel-height: 115px;
+      }
       .theme-btn { padding: 12px 18px; font-size: 12px; letter-spacing: 1px; }
       .theme-controls { gap: 10px; }
     }
     
     /* Mobile */
     @media (max-width: 768px) {
+      :root {
+        --bottom-panel-height: 120px;
+      }
       .hud { font-size: 10px; padding: 10px; letter-spacing: 1px; }
       .hud-top-left { top: 10px; left: 10px; }
       .hud-top-right { top: 10px; right: 10px; }
-      .hud-bottom-left { bottom: 95px; left: 10px; }
       .title { font-size: 12px; margin-bottom: 6px; }
       .data-row { margin: 3px 0; }
-      #canvas-container { bottom: 120px; }
-      .bottom-panel { height: 120px; padding: 10px; }
       .button-container { gap: 8px; }
       .theme-controls { gap: 8px; }
       .action-controls { gap: 8px; }
-      .theme-btn { padding: 10px 14px; font-size: 10px; letter-spacing: 1px; min-height: 44px; min-width: 44px; }
+      .theme-btn { padding: 10px 14px; font-size: 10px; letter-spacing: 1px; }
     }
     
     /* Small mobile */
     @media (max-width: 480px) {
+      :root {
+        --bottom-panel-height: 105px;
+      }
       .hud-top-right { display: none; }
       .hud-bottom-left { display: none; }
       .hud-top-left { top: 8px; left: 8px; padding: 8px; }
       .title { font-size: 10px; }
       .hud { font-size: 9px; }
-      #canvas-container { bottom: 105px; }
-      .bottom-panel { height: 105px; padding: 8px; }
       .button-container { gap: 6px; }
-      .theme-btn { padding: 8px 10px; font-size: 9px; min-height: 40px; }
+      .theme-btn { padding: 8px 10px; font-size: 9px; min-height: 44px; min-width: 44px; }
       .theme-controls { gap: 6px; }
       .action-controls { gap: 6px; }
+    }
+    
+    /* FIXED: Loading state */
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: #0a0a0a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      transition: opacity 0.5s ease;
+    }
+    
+    .loading-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    .loading-text {
+      font-family: 'Orbitron', sans-serif;
+      color: #00FFFF;
+      font-size: 18px;
+      letter-spacing: 4px;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
     }
   </style>
 </head>
 <body>
+  <!-- FIXED: Loading overlay -->
+  <div class="loading-overlay" id="loading">
+    <div class="loading-text">INITIALIZING...</div>
+  </div>
+  
   <div id="canvas-container"></div>
   <div class="scanline"></div>
   <div class="vignette"></div>
+  
   <div class="hud hud-top-left">
     <div class="title">◈ DESERT RECON // XS-4</div>
     <div class="data-row"><span class="label">ALT:</span> <span class="value" id="altitude">0000</span>m</div>
     <div class="data-row"><span class="label">SPD:</span> <span class="value" id="speed">000</span>km/h</div>
     <div class="data-row"><span class="label">HDG:</span> <span class="value" id="heading">000</span>°</div>
   </div>
+  
   <div class="hud hud-top-right">
     <div class="title">STATUS ◈</div>
     <div class="data-row"><span class="label">SYSTEM:</span> <span class="value">ONLINE</span></div>
     <div class="data-row"><span class="label">MODE:</span> <span class="value">RECON</span></div>
   </div>
+  
   <div class="hud hud-bottom-left">
     <div class="data-row"><span class="label">LAT:</span> <span class="value" id="lat">47.3892</span>°N</div>
     <div class="data-row"><span class="label">LON:</span> <span class="value" id="lon">-122.4821</span>°W</div>
@@ -143,7 +367,33 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script>
-    // Simplex Noise
+    // ========== UTILITY FUNCTIONS ==========
+    
+    // FIXED: Debounce function for resize events
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
+    
+    // FIXED: Better mobile detection
+    function isMobileDevice() {
+      // Check for touch capability AND screen size
+      const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const isSmallScreen = window.innerWidth < 768 || window.innerHeight < 768;
+      const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      // Consider it mobile if it has touch AND is either small screen or mobile UA
+      return hasTouch && (isSmallScreen || isMobileUA);
+    }
+    
+    // ========== SIMPLEX NOISE ==========
     const SimplexNoise = (function () {
       const F2 = 0.5 * (Math.sqrt(3) - 1), G2 = (3 - Math.sqrt(3)) / 6;
       const grad3 = [[1,1,0],[-1,1,0],[1,-1,0],[-1,-1,0],[1,0,1],[-1,0,1],[1,0,-1],[-1,0,-1],[0,1,1],[0,-1,1],[0,1,-1],[0,-1,-1]];
@@ -174,647 +424,804 @@
       return SimplexNoise;
     })();
 
-    const container = document.getElementById('canvas-container');
-    const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x00CED1, 0);
+    // ========== INITIALIZATION ==========
     
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
-    
-    const camera = new THREE.PerspectiveCamera(isMobile ? 65 : 55, window.innerWidth / window.innerHeight, 0.1, 4000);
-    camera.position.set(isMobile ? -180 : -200, isMobile ? 220 : 200, isMobile ? 180 : 200);
-    camera.lookAt(0, 0, 0);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: !isMobile, powerPreference: isMobile ? 'low-power' : 'high-performance' });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1 : 2));
-    renderer.setClearColor(0x00CED1);
-    renderer.outputEncoding = THREE.sRGBEncoding;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.shadowMap.enabled = false;
-    container.appendChild(renderer.domElement);
-
-    const simplex = new SimplexNoise(42);
-    const terrainSize = isMobile ? 160 : 200;
-    const terrainSegments = isMobile ? 48 : 192;
-    const terrainHeight = 25;
-    const volumeDepth = 50;
-
-    function getTerrainHeight(x, z) {
-      let height = 0; const scale = 0.018;
-      height += simplex.noise2D(x * scale, z * scale) * 1.0;
-      height += simplex.noise2D(x * scale * 2.5, z * scale * 2.5) * 0.5;
-      height += simplex.noise2D(x * scale * 5, z * scale * 5) * 0.25;
-      height += simplex.noise2D(x * scale * 10, z * scale * 10) * 0.125;
-      height = Math.pow(Math.abs(height), 0.9) * Math.sign(height);
-      let finalHeight = height * terrainHeight;
-      const valleyFloor = -5.0, valleyThreshold = -2.0;
-      if (finalHeight < valleyThreshold) {
-        const transitionFactor = (valleyThreshold - finalHeight) / (valleyThreshold - valleyFloor);
-        finalHeight = finalHeight * (1.0 - Math.min(1.0, transitionFactor)) + valleyFloor * Math.min(1.0, transitionFactor);
-      }
-      return finalHeight;
-    }
-
-    const terrainGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize, terrainSegments, terrainSegments);
-    terrainGeometry.rotateX(-Math.PI / 2);
-    const posAttr = terrainGeometry.attributes.position, pos = posAttr.array;
-    for (let i = 0; i < pos.length; i += 3) pos[i + 1] = getTerrainHeight(pos[i], pos[i + 2]);
-    posAttr.needsUpdate = true;
-    terrainGeometry.computeVertexNormals();
-
-    const terrainMaterial = new THREE.ShaderMaterial({
-      uniforms: {
-        time: { value: 0 }, scrollOffset: { value: 0 },
-        colorSand: { value: new THREE.Color(0xDEB8A0) },
-        colorDune: { value: new THREE.Color(0xE8A87C) },
-        colorPeak: { value: new THREE.Color(0x8B2942) },
-        hasRivers: { value: 0.0 },
-        riverColor: { value: new THREE.Color(0x00FFFF) },
-        isMobile: { value: isMobile ? 1.0 : 0.0 }
-      },
-      vertexShader: `varying vec3 vPosition; varying vec3 vNormal; varying float vElevation;
-        void main() { vPosition = position; vNormal = normal; vElevation = position.y; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-      fragmentShader: `
-        uniform float time, scrollOffset, hasRivers, isMobile;
-        uniform vec3 colorSand, colorDune, colorPeak, riverColor;
-        varying vec3 vPosition, vNormal; varying float vElevation;
-        float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-        void main() {
-          float heightFactor = clamp((vElevation + 20.0) / 40.0, 0.0, 1.0);
-          vec3 color = heightFactor < 0.5 ? mix(colorSand, colorDune, heightFactor * 2.0) : mix(colorDune, colorPeak, (heightFactor - 0.5) * 2.0);
-          if (hasRivers > 0.5) {
-            vec2 scrolledPos = vec2(vPosition.x + scrollOffset, vPosition.z);
-            float notOnValleyFloor = smoothstep(-6.0, -3.0, vElevation);
-            vec2 cellCoord = floor(scrolledPos / 16.0);
-            float neighbors = 0.0;
-            for (float dx = -1.0; dx <= 1.0; dx += 1.0) for (float dz = -1.0; dz <= 1.0; dz += 1.0) if (dx != 0.0 || dz != 0.0) if (hash(cellCoord + vec2(dx, dz)) > 0.2) neighbors += 1.0;
-            float lifePattern = (neighbors >= 2.0 && neighbors <= 7.0) ? 1.0 : (neighbors >= 1.0 && hash(cellCoord) > 0.25) ? 0.9 : 0.0;
-            float forestCoverage = smoothstep(0.2, 0.8, lifePattern * notOnValleyFloor);
-            float elevationDarkness = pow(smoothstep(-10.0, 10.0, vElevation), 0.7);
-            vec3 forestColor = neighbors >= 5.0 ? colorSand * (0.12 + elevationDarkness * 0.08) : neighbors >= 3.0 ? colorSand * (0.20 + elevationDarkness * 0.12) : colorSand * (0.30 + elevationDarkness * 0.15);
-            color = mix(color, forestColor, forestCoverage * 0.95);
-            float isValleyFloor = smoothstep(-3.5, -5.5, vElevation);
-            color = mix(color, riverColor * (0.85 + sin(time * 0.5) * 0.1), isValleyFloor * 0.98);
-          }
-          
-          float lit;
-          if (isMobile > 0.5) {
-            lit = 0.6 + heightFactor * 0.4;
-          } else {
-            vec3 lightDir = normalize(vec3(0.6, 0.8, 0.7));
-            float diffuse = max(dot(vNormal, lightDir), 0.0);
-            float frontFacing = max(0.0, dot(vNormal, vec3(0.0, 0.0, 1.0)));
-            float sideFacing = abs(dot(vNormal, vec3(1.0, 0.0, 0.0)));
-            float ambient = 0.35;
-            float shadowFactor = 1.0 - sideFacing * 0.5;
-            lit = ambient + diffuse * 0.65 * shadowFactor;
-          }
-          
-          gl_FragColor = vec4(color * lit, 1.0);
-        }`,
-      side: THREE.DoubleSide
+    // Wait for DOM and fonts before initializing
+    document.fonts.ready.then(() => {
+      // Small delay to ensure CSS has applied
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          initializeScene();
+        });
+      });
     });
-    const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
-    scene.add(terrain);
-
-    const volumeMaterial = new THREE.ShaderMaterial({
-      uniforms: { 
-        baseColor: { value: new THREE.Color(0x2F8B7B) }, 
-        gridColor: { value: new THREE.Color(0x00FFFF) },
-        edgeColor: { value: new THREE.Color(0x00FFFF) },
-        isMobile: { value: isMobile ? 1.0 : 0.0 },
-        volumeDepth: { value: volumeDepth }
-      },
-      vertexShader: `
-        attribute float isTop;
-        varying vec3 vPosition, vNormal, vWorldNormal;
-        varying float vIsTop;
-        void main() { 
-          vPosition = position; 
-          vNormal = normal; 
-          vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
-          vIsTop = isTop;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); 
-        }`,
-      fragmentShader: `uniform vec3 baseColor, gridColor, edgeColor;
-        uniform float isMobile, volumeDepth;
-        varying vec3 vPosition, vNormal, vWorldNormal;
-        varying float vIsTop;
-        void main() {
-          vec3 color = baseColor;
-          
-          if (isMobile < 0.5) {
-            float gridSize = 4.0; 
-            vec2 grid = abs(fract(vPosition.xy / gridSize - 0.5) - 0.5) / fwidth(vPosition.xy / gridSize);
-            float gridMask = 1.0 - min(min(grid.x, grid.y), 1.0);
-            color = mix(baseColor, gridColor, gridMask * 0.15);
-          }
-          
-          float lit;
-          if (isMobile > 0.5) {
-            lit = 0.7;
-          } else {
-            vec3 lightDir = normalize(vec3(0.6, 0.8, 0.7));
-            float diffuse = max(dot(vWorldNormal, lightDir), 0.0);
-            float ambient = 0.35;
-            lit = ambient + diffuse * 0.65;
-          }
-          
-          float edgeGlow = step(0.92, vIsTop);
-          color = mix(color, edgeColor * 2.0, edgeGlow);
-          
-          gl_FragColor = vec4(color * lit, 1.0);
-        }`,
-      side: THREE.DoubleSide
-    });
-
-    const bottomGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize);
-    bottomGeometry.rotateX(-Math.PI / 2);
-    const bottomPlane = new THREE.Mesh(bottomGeometry, volumeMaterial);
-    bottomPlane.position.y = -volumeDepth;
-    scene.add(bottomPlane);
-
-    const wallSegments = isMobile ? 32 : 128;
-    function createWallStrip(samples) {
-      const geometry = new THREE.BufferGeometry();
-      const positions = new Float32Array(samples * 2 * 3);
-      const normals = new Float32Array(samples * 2 * 3);
-      const isTop = new Float32Array(samples * 2);
-      const indices = [];
-      for (let i = 0; i < samples; i++) {
-        isTop[i * 2] = 1.0;
-        isTop[i * 2 + 1] = 0.0;
-      }
-      for (let i = 0; i < samples - 1; i++) { const a = i * 2, b = i * 2 + 1, c = (i + 1) * 2, d = (i + 1) * 2 + 1; indices.push(a, b, c, b, d, c); }
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
-      geometry.setAttribute('isTop', new THREE.BufferAttribute(isTop, 1));
-      geometry.setIndex(indices);
-      return geometry;
-    }
-    const frontWallGeometry = createWallStrip(wallSegments), frontWall = new THREE.Mesh(frontWallGeometry, volumeMaterial); scene.add(frontWall);
-    const backWallGeometry = createWallStrip(wallSegments), backWall = new THREE.Mesh(backWallGeometry, volumeMaterial); scene.add(backWall);
-    const leftWallGeometry = createWallStrip(wallSegments), leftWall = new THREE.Mesh(leftWallGeometry, volumeMaterial); scene.add(leftWall);
-    const rightWallGeometry = createWallStrip(wallSegments), rightWall = new THREE.Mesh(rightWallGeometry, volumeMaterial); scene.add(rightWall);
-
-    const heliGroup = new THREE.Group();
-    heliGroup.position.set(0, 50, 0);
-    heliGroup.scale.set(2, 2, 2);
-    scene.add(heliGroup);
-
-    // ======== IMPROVED SPACESHIP ========
-    function createCoolSpaceship() {
-      const shipGroup = new THREE.Group();
+    
+    function initializeScene() {
+      const container = document.getElementById('canvas-container');
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x00CED1, 0);
       
-      // Main fuselage - sleek elongated shape
-      const fuselageMat = new THREE.MeshStandardMaterial({ 
-        color: 0x1a1a2e, 
-        metalness: 0.9, 
-        roughness: 0.2, 
-        emissive: 0x0a0a15, 
-        emissiveIntensity: 0.3 
-      });
+      // FIXED: Recalculate mobile status on resize
+      let isMobile = isMobileDevice();
       
-      // Main body - elongated diamond shape
-      const bodyGeom = new THREE.ConeGeometry(2.5, 12, 4);
-      bodyGeom.rotateZ(Math.PI / 2);
-      bodyGeom.rotateY(Math.PI / 4);
-      const body = new THREE.Mesh(bodyGeom, fuselageMat);
-      body.scale.set(1, 0.4, 0.8);
-      shipGroup.add(body);
-      
-      // Cockpit - glowing canopy
-      const cockpitMat = new THREE.MeshStandardMaterial({ 
-        color: 0x00ffff, 
-        metalness: 0.1, 
-        roughness: 0.1, 
-        emissive: 0x00ffff, 
-        emissiveIntensity: 0.8,
-        transparent: true,
-        opacity: 0.9
-      });
-      const cockpitGeom = new THREE.SphereGeometry(1.2, 16, 12);
-      const cockpit = new THREE.Mesh(cockpitGeom, cockpitMat);
-      cockpit.position.set(3, 0.5, 0);
-      cockpit.scale.set(1.5, 0.6, 0.8);
-      shipGroup.add(cockpit);
-      
-      // Wings - swept back aggressive style
-      const wingMat = new THREE.MeshStandardMaterial({ 
-        color: 0x2a1a4a, 
-        metalness: 0.8, 
-        roughness: 0.3 
-      });
-      
-      // Main wings
-      const wingShape = new THREE.Shape();
-      wingShape.moveTo(0, 0);
-      wingShape.lineTo(-6, 8);
-      wingShape.lineTo(-8, 7);
-      wingShape.lineTo(-2, 0);
-      wingShape.lineTo(-8, -7);
-      wingShape.lineTo(-6, -8);
-      wingShape.closePath();
-      
-      const wingGeom = new THREE.ExtrudeGeometry(wingShape, { depth: 0.3, bevelEnabled: false });
-      wingGeom.rotateX(Math.PI / 2);
-      wingGeom.translate(0, 0, -0.15);
-      const wings = new THREE.Mesh(wingGeom, wingMat);
-      wings.position.set(-1, 0, 0);
-      shipGroup.add(wings);
-      
-      // Vertical stabilizers
-      const finGeom = new THREE.BoxGeometry(3, 0.2, 2.5);
-      const finMat = new THREE.MeshStandardMaterial({ color: 0x3a2a5a, metalness: 0.7, roughness: 0.4 });
-      
-      const fin1 = new THREE.Mesh(finGeom, finMat);
-      fin1.position.set(-4, 1.5, 2);
-      fin1.rotation.x = 0.3;
-      shipGroup.add(fin1);
-      
-      const fin2 = new THREE.Mesh(finGeom, finMat);
-      fin2.position.set(-4, 1.5, -2);
-      fin2.rotation.x = -0.3;
-      shipGroup.add(fin2);
-      
-      // Engine pods
-      const engineMat = new THREE.MeshBasicMaterial({ color: 0xff6600 });
-      const engineGlowMat = new THREE.MeshBasicMaterial({ 
-        color: 0x00ffff, 
-        transparent: true, 
-        opacity: 0.9 
-      });
-      
-      const engineGeom = new THREE.CylinderGeometry(0.6, 0.9, 2, 8);
-      engineGeom.rotateZ(Math.PI / 2);
-      
-      const engine1 = new THREE.Mesh(engineGeom, engineMat);
-      engine1.position.set(-7, 0, 2.5);
-      shipGroup.add(engine1);
-      
-      const engine2 = engine1.clone();
-      engine2.position.set(-7, 0, -2.5);
-      shipGroup.add(engine2);
-      
-      // Engine glow
-      const glowGeom = new THREE.SphereGeometry(0.7, 8, 8);
-      const glow1 = new THREE.Mesh(glowGeom, engineGlowMat);
-      glow1.position.set(-8, 0, 2.5);
-      glow1.scale.set(1.5, 1, 1);
-      shipGroup.add(glow1);
-      
-      const glow2 = glow1.clone();
-      glow2.position.set(-8, 0, -2.5);
-      shipGroup.add(glow2);
-      
-      // Central engine
-      const mainEngineGeom = new THREE.CylinderGeometry(1, 1.3, 3, 8);
-      mainEngineGeom.rotateZ(Math.PI / 2);
-      const mainEngine = new THREE.Mesh(mainEngineGeom, engineMat);
-      mainEngine.position.set(-7.5, 0, 0);
-      shipGroup.add(mainEngine);
-      
-      const mainGlow = new THREE.Mesh(glowGeom, engineGlowMat);
-      mainGlow.position.set(-9, 0, 0);
-      mainGlow.scale.set(2, 1.2, 1.2);
-      shipGroup.add(mainGlow);
-      
-      // Nose cone detail
-      const noseMat = new THREE.MeshStandardMaterial({ 
-        color: 0x8B2942, 
-        metalness: 0.9, 
-        roughness: 0.1,
-        emissive: 0x8B2942,
-        emissiveIntensity: 0.3
-      });
-      const noseGeom = new THREE.ConeGeometry(0.8, 3, 8);
-      noseGeom.rotateZ(-Math.PI / 2);
-      const nose = new THREE.Mesh(noseGeom, noseMat);
-      nose.position.set(7, 0, 0);
-      shipGroup.add(nose);
-      
-      // Accent lights along wings
-      const lightMat = new THREE.MeshBasicMaterial({ color: 0xff0044 });
-      const lightGeom = new THREE.SphereGeometry(0.15, 6, 6);
-      
-      for (let i = 0; i < 4; i++) {
-        const light1 = new THREE.Mesh(lightGeom, lightMat);
-        light1.position.set(-2 - i * 1.5, 0.2, 3 + i * 1.2);
-        shipGroup.add(light1);
-        
-        const light2 = new THREE.Mesh(lightGeom, lightMat);
-        light2.position.set(-2 - i * 1.5, 0.2, -3 - i * 1.2);
-        shipGroup.add(light2);
+      // FIXED: Get actual container dimensions
+      function getContainerDimensions() {
+        const rect = container.getBoundingClientRect();
+        return {
+          width: rect.width || window.innerWidth,
+          height: rect.height || (window.innerHeight - 115)
+        };
       }
       
-      return shipGroup;
-    }
-    
-    // Create and add the fallback ship immediately
-    const fallbackShip = createCoolSpaceship();
-    heliGroup.add(fallbackShip);
-    console.log('Fallback spaceship created');
-
-    // Try to load external model
-    const loader = new THREE.GLTFLoader();
-    
-    // List of model URLs to try (in order of preference)
-    const modelUrls = [
-      // Poly Pizza Space Craft Speeder by Kenney (the one you want)
-      'https://static.poly.pizza/mlQBUQRUpM.glb',
-      // Alternative format
-      'https://poly.pizza/api/v1/models/mlQBUQRUpM/download'
-    ];
-    
-    let modelLoaded = false;
-    
-    function tryLoadModel(urlIndex) {
-      if (urlIndex >= modelUrls.length || modelLoaded) {
-        if (!modelLoaded) {
-          console.log('All external models failed, using enhanced fallback ship');
-        }
-        return;
-      }
+      const dims = getContainerDimensions();
       
-      const url = modelUrls[urlIndex];
-      console.log(`Trying to load model from: ${url}`);
-      
-      loader.load(
-        url,
-        (gltf) => {
-          console.log('Model loaded successfully!', gltf);
-          modelLoaded = true;
-          
-          // Clear the fallback
-          while(heliGroup.children.length > 0) {
-            heliGroup.remove(heliGroup.children[0]);
-          }
-          
-          const shipModel = gltf.scene;
-          const box = new THREE.Box3().setFromObject(shipModel);
-          const size = box.getSize(new THREE.Vector3());
-          const scale = 25 / Math.max(size.x, size.y, size.z);
-          shipModel.scale.set(scale, scale, scale);
-          const center = box.getCenter(new THREE.Vector3());
-          shipModel.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
-          
-          // Adjust rotation - try different values if it looks wrong
-          shipModel.rotation.y = Math.PI / 2;
-          
-          heliGroup.add(shipModel);
-          console.log('External model added to scene');
-        },
-        (progress) => {
-          if (progress.total > 0) {
-            console.log(`Loading: ${Math.round(progress.loaded / progress.total * 100)}%`);
-          }
-        },
-        (error) => {
-          console.warn(`Failed to load from ${url}:`, error.message || error);
-          // Try next URL
-          tryLoadModel(urlIndex + 1);
-        }
+      const camera = new THREE.PerspectiveCamera(
+        isMobile ? 65 : 55, 
+        dims.width / dims.height, 
+        0.1, 
+        4000
       );
-    }
-    
-    // Start trying to load models
-    tryLoadModel(0);
+      camera.position.set(isMobile ? -180 : -200, isMobile ? 220 : 200, isMobile ? 180 : 200);
+      camera.lookAt(0, 0, 0);
 
-    const animalGroup = new THREE.Group();
-    const polarBearMat = new THREE.MeshStandardMaterial({ color: 0xF5F5F5, roughness: 0.8 });
-    const penguinBodyMat = new THREE.MeshStandardMaterial({ color: 0x212121, roughness: 0.6 });
-    const penguinBellyMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.7 });
-    const animalStep = isMobile ? 60 : 35;
-    for (let x = -80; x <= 80; x += animalStep) {
-      for (let z = -80; z <= 80; z += animalStep) {
-        const animalObj = new THREE.Group();
-        const px = x + (Math.random() - 0.5) * 20, pz = z + (Math.random() - 0.5) * 20;
-        if (Math.random() > 0.5) {
-          const body = new THREE.Mesh(new THREE.BoxGeometry(3, 1.5, 4), polarBearMat); body.position.y = 1; animalObj.add(body);
-          const head = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.5, 1.8), polarBearMat); head.position.set(0, 1.2, 2.5); animalObj.add(head);
-        } else {
-          const body = new THREE.Mesh(new THREE.SphereGeometry(0.8, 8, 8), penguinBodyMat); body.scale.y = 1.5; body.position.y = 1.2; animalObj.add(body);
-          const belly = new THREE.Mesh(new THREE.SphereGeometry(0.6, 8, 8), penguinBellyMat); belly.scale.y = 1.3; belly.position.set(0, 1.2, 0.4); animalObj.add(belly);
-        }
-        animalObj.userData = { initialX: px, initialZ: pz };
-        animalObj.position.set(px, getTerrainHeight(px, pz), pz);
-        animalObj.rotation.y = Math.random() * Math.PI * 2;
-        animalGroup.add(animalObj);
-      }
-    }
-    animalGroup.visible = false;
-    scene.add(animalGroup);
-
-    const keyLight = new THREE.DirectionalLight(0x00CED1, 1.0);
-    keyLight.position.set(80, 200, 120);
-    scene.add(keyLight);
-    const fillLight = new THREE.DirectionalLight(0xE8A87C, 0.5);
-    fillLight.position.set(-120, 120, -80);
-    scene.add(fillLight);
-    const ambientLight = new THREE.AmbientLight(0x00CED1, 0.6);
-    scene.add(ambientLight);
-
-    let time = 0, scrollOffset = 0;
-    const scrollSpeed = 32;
-    
-    let barrelRollActive = false;
-    let barrelRollProgress = 0;
-    const barrelRollDuration = 1.2;
-    let rollStartX = 0, rollStartY = 0, rollStartZ = 0;
-
-    
-    let loopActive = false;
-    let loopProgress = 0;
-    const loopDuration = 1.5;
-
-    function updateWalls() {
-      const halfSize = terrainSize / 2;
-      [[frontWallGeometry, halfSize, true], [backWallGeometry, -halfSize, true], [leftWallGeometry, -halfSize, false], [rightWallGeometry, halfSize, false]].forEach(([geom, coord, isZ]) => {
-        const arr = geom.attributes.position.array;
-        for (let i = 0; i < wallSegments; i++) {
-          const t = i / (wallSegments - 1);
-          const primary = -halfSize + t * terrainSize;
-          const x = isZ ? primary : coord, z = isZ ? coord : primary;
-          const height = getTerrainHeight(x + scrollOffset, z);
-          arr[i * 6] = x; arr[i * 6 + 1] = height; arr[i * 6 + 2] = z;
-          arr[i * 6 + 3] = x; arr[i * 6 + 4] = -volumeDepth; arr[i * 6 + 5] = z;
-        }
-        geom.attributes.position.needsUpdate = true;
-        geom.computeVertexNormals();
+      // FIXED: Better renderer configuration
+      const renderer = new THREE.WebGLRenderer({ 
+        antialias: !isMobile,
+        powerPreference: isMobile ? 'low-power' : 'high-performance',
+        // FIXED: Enable alpha for better compositing
+        alpha: false,
+        // FIXED: Preserve drawing buffer for mobile screenshots
+        preserveDrawingBuffer: isMobile,
+        // FIXED: Fail gracefully
+        failIfMajorPerformanceCaveat: false
       });
-    }
-
-    function animate() {
-      requestAnimationFrame(animate);
-      time += 0.016;
-      scrollOffset += scrollSpeed * 0.016;
-
-      terrainMaterial.uniforms.time.value = time;
-      terrainMaterial.uniforms.scrollOffset.value = scrollOffset;
-
-      for (let i = 0; i < pos.length; i += 3) pos[i + 1] = getTerrainHeight(pos[i] + scrollOffset, pos[i + 2]);
-      posAttr.needsUpdate = true;
       
-      if (!isMobile) {
-        terrainGeometry.computeVertexNormals();
+      renderer.setSize(dims.width, dims.height);
+      // FIXED: Better DPR handling - allow 1.5 on mobile for sharper rendering without huge perf hit
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2));
+      renderer.setClearColor(0x00CED1);
+      renderer.outputEncoding = THREE.sRGBEncoding;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.shadowMap.enabled = false;
+      container.appendChild(renderer.domElement);
+
+      // FIXED: Handle WebGL context loss
+      renderer.domElement.addEventListener('webglcontextlost', (event) => {
+        event.preventDefault();
+        console.warn('WebGL context lost. Attempting recovery...');
+        cancelAnimationFrame(animationId);
+      }, false);
+
+      renderer.domElement.addEventListener('webglcontextrestored', () => {
+        console.log('WebGL context restored.');
+        animate();
+      }, false);
+
+      const simplex = new SimplexNoise(42);
+      
+      // FIXED: Adaptive quality based on device
+      const terrainSize = isMobile ? 160 : 200;
+      const terrainSegments = isMobile ? 48 : 192;
+      const terrainHeight = 25;
+      const volumeDepth = 50;
+      const wallSegments = isMobile ? 32 : 128;
+
+      function getTerrainHeight(x, z) {
+        let height = 0; const scale = 0.018;
+        height += simplex.noise2D(x * scale, z * scale) * 1.0;
+        height += simplex.noise2D(x * scale * 2.5, z * scale * 2.5) * 0.5;
+        // FIXED: Reduce octaves on mobile
+        if (!isMobile) {
+          height += simplex.noise2D(x * scale * 5, z * scale * 5) * 0.25;
+          height += simplex.noise2D(x * scale * 10, z * scale * 10) * 0.125;
+        }
+        height = Math.pow(Math.abs(height), 0.9) * Math.sign(height);
+        let finalHeight = height * terrainHeight;
+        const valleyFloor = -5.0, valleyThreshold = -2.0;
+        if (finalHeight < valleyThreshold) {
+          const transitionFactor = (valleyThreshold - finalHeight) / (valleyThreshold - valleyFloor);
+          finalHeight = finalHeight * (1.0 - Math.min(1.0, transitionFactor)) + valleyFloor * Math.min(1.0, transitionFactor);
+        }
+        return finalHeight;
       }
 
-      updateWalls();
+      const terrainGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize, terrainSegments, terrainSegments);
+      terrainGeometry.rotateX(-Math.PI / 2);
+      const posAttr = terrainGeometry.attributes.position, pos = posAttr.array;
+      for (let i = 0; i < pos.length; i += 3) pos[i + 1] = getTerrainHeight(pos[i], pos[i + 2]);
+      posAttr.needsUpdate = true;
+      terrainGeometry.computeVertexNormals();
 
-      if (animalGroup.visible) {
-        animalGroup.children.forEach(a => {
-          let newX = a.userData.initialX - (scrollOffset % (terrainSize * 2));
-          while (newX < -terrainSize / 2) newX += terrainSize;
-          while (newX > terrainSize / 2) newX -= terrainSize;
-          a.position.set(newX, getTerrainHeight(a.userData.initialX, a.userData.initialZ), a.userData.initialZ);
+      // FIXED: Simplified mobile shader
+      const terrainMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+          time: { value: 0 }, 
+          scrollOffset: { value: 0 },
+          colorSand: { value: new THREE.Color(0xDEB8A0) },
+          colorDune: { value: new THREE.Color(0xE8A87C) },
+          colorPeak: { value: new THREE.Color(0x8B2942) },
+          hasRivers: { value: 0.0 },
+          riverColor: { value: new THREE.Color(0x00FFFF) },
+          isMobile: { value: isMobile ? 1.0 : 0.0 }
+        },
+        vertexShader: `
+          varying vec3 vPosition; 
+          varying vec3 vNormal; 
+          varying float vElevation;
+          void main() { 
+            vPosition = position; 
+            vNormal = normal; 
+            vElevation = position.y; 
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); 
+          }
+        `,
+        fragmentShader: `
+          uniform float time, scrollOffset, hasRivers, isMobile;
+          uniform vec3 colorSand, colorDune, colorPeak, riverColor;
+          varying vec3 vPosition, vNormal; 
+          varying float vElevation;
+          
+          // FIXED: Simplified hash for mobile
+          float hash(vec2 p) { 
+            return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); 
+          }
+          
+          void main() {
+            float heightFactor = clamp((vElevation + 20.0) / 40.0, 0.0, 1.0);
+            vec3 color = heightFactor < 0.5 
+              ? mix(colorSand, colorDune, heightFactor * 2.0) 
+              : mix(colorDune, colorPeak, (heightFactor - 0.5) * 2.0);
+            
+            // FIXED: Simplified river/forest logic for mobile
+            if (hasRivers > 0.5) {
+              float isValleyFloor = smoothstep(-3.5, -5.5, vElevation);
+              
+              if (isMobile < 0.5) {
+                // Full forest detail on desktop
+                vec2 scrolledPos = vec2(vPosition.x + scrollOffset, vPosition.z);
+                float notOnValleyFloor = smoothstep(-6.0, -3.0, vElevation);
+                vec2 cellCoord = floor(scrolledPos / 16.0);
+                float neighbors = 0.0;
+                for (float dx = -1.0; dx <= 1.0; dx += 1.0) {
+                  for (float dz = -1.0; dz <= 1.0; dz += 1.0) {
+                    if (dx != 0.0 || dz != 0.0) {
+                      if (hash(cellCoord + vec2(dx, dz)) > 0.2) neighbors += 1.0;
+                    }
+                  }
+                }
+                float lifePattern = (neighbors >= 2.0 && neighbors <= 7.0) ? 1.0 : (neighbors >= 1.0 && hash(cellCoord) > 0.25) ? 0.9 : 0.0;
+                float forestCoverage = smoothstep(0.2, 0.8, lifePattern * notOnValleyFloor);
+                float elevationDarkness = pow(smoothstep(-10.0, 10.0, vElevation), 0.7);
+                vec3 forestColor = neighbors >= 5.0 
+                  ? colorSand * (0.12 + elevationDarkness * 0.08) 
+                  : neighbors >= 3.0 
+                    ? colorSand * (0.20 + elevationDarkness * 0.12) 
+                    : colorSand * (0.30 + elevationDarkness * 0.15);
+                color = mix(color, forestColor, forestCoverage * 0.95);
+              } else {
+                // Simplified forest for mobile - just darken higher elevations
+                float notOnValleyFloor = smoothstep(-6.0, -3.0, vElevation);
+                vec2 cellCoord = floor(vPosition.xz / 20.0);
+                float forestNoise = hash(cellCoord);
+                if (forestNoise > 0.3) {
+                  color = mix(color, colorSand * 0.25, notOnValleyFloor * 0.7);
+                }
+              }
+              
+              color = mix(color, riverColor * (0.85 + sin(time * 0.5) * 0.1), isValleyFloor * 0.98);
+            }
+            
+            float lit;
+            if (isMobile > 0.5) {
+              // Simple lighting for mobile
+              lit = 0.6 + heightFactor * 0.4;
+            } else {
+              vec3 lightDir = normalize(vec3(0.6, 0.8, 0.7));
+              float diffuse = max(dot(vNormal, lightDir), 0.0);
+              float frontFacing = max(0.0, dot(vNormal, vec3(0.0, 0.0, 1.0)));
+              float sideFacing = abs(dot(vNormal, vec3(1.0, 0.0, 0.0)));
+              float ambient = 0.35;
+              float shadowFactor = 1.0 - sideFacing * 0.5;
+              lit = ambient + diffuse * 0.65 * shadowFactor;
+            }
+            
+            gl_FragColor = vec4(color * lit, 1.0);
+          }
+        `,
+        side: THREE.DoubleSide
+      });
+      
+      const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
+      scene.add(terrain);
+
+      // Volume material (same as before but with mobile optimizations applied)
+      const volumeMaterial = new THREE.ShaderMaterial({
+        uniforms: { 
+          baseColor: { value: new THREE.Color(0x2F8B7B) }, 
+          gridColor: { value: new THREE.Color(0x00FFFF) },
+          edgeColor: { value: new THREE.Color(0x00FFFF) },
+          isMobile: { value: isMobile ? 1.0 : 0.0 },
+          volumeDepth: { value: volumeDepth }
+        },
+        vertexShader: `
+          attribute float isTop;
+          varying vec3 vPosition, vNormal, vWorldNormal;
+          varying float vIsTop;
+          void main() { 
+            vPosition = position; 
+            vNormal = normal; 
+            vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+            vIsTop = isTop;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); 
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 baseColor, gridColor, edgeColor;
+          uniform float isMobile, volumeDepth;
+          varying vec3 vPosition, vNormal, vWorldNormal;
+          varying float vIsTop;
+          void main() {
+            vec3 color = baseColor;
+            
+            // FIXED: Skip grid on mobile
+            if (isMobile < 0.5) {
+              float gridSize = 4.0; 
+              vec2 grid = abs(fract(vPosition.xy / gridSize - 0.5) - 0.5) / fwidth(vPosition.xy / gridSize);
+              float gridMask = 1.0 - min(min(grid.x, grid.y), 1.0);
+              color = mix(baseColor, gridColor, gridMask * 0.15);
+            }
+            
+            float lit;
+            if (isMobile > 0.5) {
+              lit = 0.7;
+            } else {
+              vec3 lightDir = normalize(vec3(0.6, 0.8, 0.7));
+              float diffuse = max(dot(vWorldNormal, lightDir), 0.0);
+              float ambient = 0.35;
+              lit = ambient + diffuse * 0.65;
+            }
+            
+            float edgeGlow = step(0.92, vIsTop);
+            color = mix(color, edgeColor * 2.0, edgeGlow);
+            
+            gl_FragColor = vec4(color * lit, 1.0);
+          }
+        `,
+        side: THREE.DoubleSide
+      });
+
+      const bottomGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize);
+      bottomGeometry.rotateX(-Math.PI / 2);
+      const bottomPlane = new THREE.Mesh(bottomGeometry, volumeMaterial);
+      bottomPlane.position.y = -volumeDepth;
+      scene.add(bottomPlane);
+
+      function createWallStrip(samples) {
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(samples * 2 * 3);
+        const normals = new Float32Array(samples * 2 * 3);
+        const isTop = new Float32Array(samples * 2);
+        const indices = [];
+        for (let i = 0; i < samples; i++) {
+          isTop[i * 2] = 1.0;
+          isTop[i * 2 + 1] = 0.0;
+        }
+        for (let i = 0; i < samples - 1; i++) { 
+          const a = i * 2, b = i * 2 + 1, c = (i + 1) * 2, d = (i + 1) * 2 + 1; 
+          indices.push(a, b, c, b, d, c); 
+        }
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+        geometry.setAttribute('isTop', new THREE.BufferAttribute(isTop, 1));
+        geometry.setIndex(indices);
+        return geometry;
+      }
+      
+      const frontWallGeometry = createWallStrip(wallSegments), frontWall = new THREE.Mesh(frontWallGeometry, volumeMaterial); scene.add(frontWall);
+      const backWallGeometry = createWallStrip(wallSegments), backWall = new THREE.Mesh(backWallGeometry, volumeMaterial); scene.add(backWall);
+      const leftWallGeometry = createWallStrip(wallSegments), leftWall = new THREE.Mesh(leftWallGeometry, volumeMaterial); scene.add(leftWall);
+      const rightWallGeometry = createWallStrip(wallSegments), rightWall = new THREE.Mesh(rightWallGeometry, volumeMaterial); scene.add(rightWall);
+
+      // Spaceship group
+      const heliGroup = new THREE.Group();
+      heliGroup.position.set(0, 50, 0);
+      heliGroup.scale.set(2, 2, 2);
+      scene.add(heliGroup);
+
+      // Create fallback spaceship (same as before)
+      function createCoolSpaceship() {
+        const shipGroup = new THREE.Group();
+        
+        const fuselageMat = new THREE.MeshStandardMaterial({ 
+          color: 0x1a1a2e, 
+          metalness: 0.9, 
+          roughness: 0.2, 
+          emissive: 0x0a0a15, 
+          emissiveIntensity: 0.3 
+        });
+        
+        const bodyGeom = new THREE.ConeGeometry(2.5, 12, 4);
+        bodyGeom.rotateZ(Math.PI / 2);
+        bodyGeom.rotateY(Math.PI / 4);
+        const body = new THREE.Mesh(bodyGeom, fuselageMat);
+        body.scale.set(1, 0.4, 0.8);
+        shipGroup.add(body);
+        
+        const cockpitMat = new THREE.MeshStandardMaterial({ 
+          color: 0x00ffff, 
+          metalness: 0.1, 
+          roughness: 0.1, 
+          emissive: 0x00ffff, 
+          emissiveIntensity: 0.8,
+          transparent: true,
+          opacity: 0.9
+        });
+        const cockpitGeom = new THREE.SphereGeometry(1.2, isMobile ? 8 : 16, isMobile ? 6 : 12);
+        const cockpit = new THREE.Mesh(cockpitGeom, cockpitMat);
+        cockpit.position.set(3, 0.5, 0);
+        cockpit.scale.set(1.5, 0.6, 0.8);
+        shipGroup.add(cockpit);
+        
+        const wingMat = new THREE.MeshStandardMaterial({ 
+          color: 0x2a1a4a, 
+          metalness: 0.8, 
+          roughness: 0.3 
+        });
+        
+        const wingShape = new THREE.Shape();
+        wingShape.moveTo(0, 0);
+        wingShape.lineTo(-6, 8);
+        wingShape.lineTo(-8, 7);
+        wingShape.lineTo(-2, 0);
+        wingShape.lineTo(-8, -7);
+        wingShape.lineTo(-6, -8);
+        wingShape.closePath();
+        
+        const wingGeom = new THREE.ExtrudeGeometry(wingShape, { depth: 0.3, bevelEnabled: false });
+        wingGeom.rotateX(Math.PI / 2);
+        wingGeom.translate(0, 0, -0.15);
+        const wings = new THREE.Mesh(wingGeom, wingMat);
+        wings.position.set(-1, 0, 0);
+        shipGroup.add(wings);
+        
+        const finGeom = new THREE.BoxGeometry(3, 0.2, 2.5);
+        const finMat = new THREE.MeshStandardMaterial({ color: 0x3a2a5a, metalness: 0.7, roughness: 0.4 });
+        
+        const fin1 = new THREE.Mesh(finGeom, finMat);
+        fin1.position.set(-4, 1.5, 2);
+        fin1.rotation.x = 0.3;
+        shipGroup.add(fin1);
+        
+        const fin2 = new THREE.Mesh(finGeom, finMat);
+        fin2.position.set(-4, 1.5, -2);
+        fin2.rotation.x = -0.3;
+        shipGroup.add(fin2);
+        
+        const engineMat = new THREE.MeshBasicMaterial({ color: 0xff6600 });
+        const engineGlowMat = new THREE.MeshBasicMaterial({ 
+          color: 0x00ffff, 
+          transparent: true, 
+          opacity: 0.9 
+        });
+        
+        const engineGeom = new THREE.CylinderGeometry(0.6, 0.9, 2, 8);
+        engineGeom.rotateZ(Math.PI / 2);
+        
+        const engine1 = new THREE.Mesh(engineGeom, engineMat);
+        engine1.position.set(-7, 0, 2.5);
+        shipGroup.add(engine1);
+        
+        const engine2 = engine1.clone();
+        engine2.position.set(-7, 0, -2.5);
+        shipGroup.add(engine2);
+        
+        const glowGeom = new THREE.SphereGeometry(0.7, 8, 8);
+        const glow1 = new THREE.Mesh(glowGeom, engineGlowMat);
+        glow1.position.set(-8, 0, 2.5);
+        glow1.scale.set(1.5, 1, 1);
+        shipGroup.add(glow1);
+        
+        const glow2 = glow1.clone();
+        glow2.position.set(-8, 0, -2.5);
+        shipGroup.add(glow2);
+        
+        const mainEngineGeom = new THREE.CylinderGeometry(1, 1.3, 3, 8);
+        mainEngineGeom.rotateZ(Math.PI / 2);
+        const mainEngine = new THREE.Mesh(mainEngineGeom, engineMat);
+        mainEngine.position.set(-7.5, 0, 0);
+        shipGroup.add(mainEngine);
+        
+        const mainGlow = new THREE.Mesh(glowGeom, engineGlowMat);
+        mainGlow.position.set(-9, 0, 0);
+        mainGlow.scale.set(2, 1.2, 1.2);
+        shipGroup.add(mainGlow);
+        
+        const noseMat = new THREE.MeshStandardMaterial({ 
+          color: 0x8B2942, 
+          metalness: 0.9, 
+          roughness: 0.1,
+          emissive: 0x8B2942,
+          emissiveIntensity: 0.3
+        });
+        const noseGeom = new THREE.ConeGeometry(0.8, 3, 8);
+        noseGeom.rotateZ(-Math.PI / 2);
+        const nose = new THREE.Mesh(noseGeom, noseMat);
+        nose.position.set(7, 0, 0);
+        shipGroup.add(nose);
+        
+        // FIXED: Reduce accent lights on mobile
+        if (!isMobile) {
+          const lightMat = new THREE.MeshBasicMaterial({ color: 0xff0044 });
+          const lightGeom = new THREE.SphereGeometry(0.15, 6, 6);
+          
+          for (let i = 0; i < 4; i++) {
+            const light1 = new THREE.Mesh(lightGeom, lightMat);
+            light1.position.set(-2 - i * 1.5, 0.2, 3 + i * 1.2);
+            shipGroup.add(light1);
+            
+            const light2 = new THREE.Mesh(lightGeom, lightMat);
+            light2.position.set(-2 - i * 1.5, 0.2, -3 - i * 1.2);
+            shipGroup.add(light2);
+          }
+        }
+        
+        return shipGroup;
+      }
+      
+      const fallbackShip = createCoolSpaceship();
+      heliGroup.add(fallbackShip);
+
+      // FIXED: Skip model loading on mobile to save bandwidth/memory
+      if (!isMobile) {
+        const loader = new THREE.GLTFLoader();
+        const modelUrls = [
+          'https://static.poly.pizza/mlQBUQRUpM.glb',
+          'https://poly.pizza/api/v1/models/mlQBUQRUpM/download'
+        ];
+        
+        let modelLoaded = false;
+        
+        function tryLoadModel(urlIndex) {
+          if (urlIndex >= modelUrls.length || modelLoaded) return;
+          
+          const url = modelUrls[urlIndex];
+          
+          loader.load(
+            url,
+            (gltf) => {
+              modelLoaded = true;
+              while(heliGroup.children.length > 0) {
+                heliGroup.remove(heliGroup.children[0]);
+              }
+              
+              const shipModel = gltf.scene;
+              const box = new THREE.Box3().setFromObject(shipModel);
+              const size = box.getSize(new THREE.Vector3());
+              const scale = 25 / Math.max(size.x, size.y, size.z);
+              shipModel.scale.set(scale, scale, scale);
+              const center = box.getCenter(new THREE.Vector3());
+              shipModel.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
+              shipModel.rotation.y = Math.PI / 2;
+              heliGroup.add(shipModel);
+            },
+            undefined,
+            () => tryLoadModel(urlIndex + 1)
+          );
+        }
+        
+        tryLoadModel(0);
+      }
+
+      // Animals (same as before with mobile optimization)
+      const animalGroup = new THREE.Group();
+      const polarBearMat = new THREE.MeshStandardMaterial({ color: 0xF5F5F5, roughness: 0.8 });
+      const penguinBodyMat = new THREE.MeshStandardMaterial({ color: 0x212121, roughness: 0.6 });
+      const penguinBellyMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.7 });
+      const animalStep = isMobile ? 60 : 35;
+      
+      for (let x = -80; x <= 80; x += animalStep) {
+        for (let z = -80; z <= 80; z += animalStep) {
+          const animalObj = new THREE.Group();
+          const px = x + (Math.random() - 0.5) * 20, pz = z + (Math.random() - 0.5) * 20;
+          if (Math.random() > 0.5) {
+            const body = new THREE.Mesh(new THREE.BoxGeometry(3, 1.5, 4), polarBearMat); 
+            body.position.y = 1; 
+            animalObj.add(body);
+            const head = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.5, 1.8), polarBearMat); 
+            head.position.set(0, 1.2, 2.5); 
+            animalObj.add(head);
+          } else {
+            const body = new THREE.Mesh(new THREE.SphereGeometry(0.8, 8, 8), penguinBodyMat); 
+            body.scale.y = 1.5; 
+            body.position.y = 1.2; 
+            animalObj.add(body);
+            const belly = new THREE.Mesh(new THREE.SphereGeometry(0.6, 8, 8), penguinBellyMat); 
+            belly.scale.y = 1.3; 
+            belly.position.set(0, 1.2, 0.4); 
+            animalObj.add(belly);
+          }
+          animalObj.userData = { initialX: px, initialZ: pz };
+          animalObj.position.set(px, getTerrainHeight(px, pz), pz);
+          animalObj.rotation.y = Math.random() * Math.PI * 2;
+          animalGroup.add(animalObj);
+        }
+      }
+      animalGroup.visible = false;
+      scene.add(animalGroup);
+
+      // Lighting
+      const keyLight = new THREE.DirectionalLight(0x00CED1, 1.0);
+      keyLight.position.set(80, 200, 120);
+      scene.add(keyLight);
+      const fillLight = new THREE.DirectionalLight(0xE8A87C, 0.5);
+      fillLight.position.set(-120, 120, -80);
+      scene.add(fillLight);
+      const ambientLight = new THREE.AmbientLight(0x00CED1, 0.6);
+      scene.add(ambientLight);
+
+      // Animation state
+      let time = 0, scrollOffset = 0;
+      const scrollSpeed = 32;
+      let barrelRollActive = false, barrelRollProgress = 0;
+      const barrelRollDuration = 1.2;
+      let loopActive = false, loopProgress = 0;
+      const loopDuration = 1.5;
+      let animationId;
+      
+      // FIXED: Frame timing for consistent animation
+      let lastTime = performance.now();
+      const targetFPS = isMobile ? 30 : 60;
+      const frameInterval = 1000 / targetFPS;
+      let frameAccumulator = 0;
+
+      function updateWalls() {
+        const halfSize = terrainSize / 2;
+        [[frontWallGeometry, halfSize, true], [backWallGeometry, -halfSize, true], [leftWallGeometry, -halfSize, false], [rightWallGeometry, halfSize, false]].forEach(([geom, coord, isZ]) => {
+          const arr = geom.attributes.position.array;
+          for (let i = 0; i < wallSegments; i++) {
+            const t = i / (wallSegments - 1);
+            const primary = -halfSize + t * terrainSize;
+            const x = isZ ? primary : coord, z = isZ ? coord : primary;
+            const height = getTerrainHeight(x + scrollOffset, z);
+            arr[i * 6] = x; arr[i * 6 + 1] = height; arr[i * 6 + 2] = z;
+            arr[i * 6 + 3] = x; arr[i * 6 + 4] = -volumeDepth; arr[i * 6 + 5] = z;
+          }
+          geom.attributes.position.needsUpdate = true;
+          geom.computeVertexNormals();
         });
       }
 
-      let baseX = Math.sin(time * 0.8) * 30 + Math.sin(time * 1.6) * 15;
-      let baseZ = Math.sin(time * 0.7) * 22 + Math.cos(time * 1.2) * 12;
-      let baseY = 50 + Math.sin(time * 0.9) * 10 + Math.sin(time * 2.2) * 4;
+      function animate(currentTime) {
+        animationId = requestAnimationFrame(animate);
+        
+        // FIXED: Frame rate limiting for mobile
+        const deltaTime = currentTime - lastTime;
+        lastTime = currentTime;
+        
+        if (isMobile) {
+          frameAccumulator += deltaTime;
+          if (frameAccumulator < frameInterval) return;
+          frameAccumulator -= frameInterval;
+        }
+        
+        const dt = Math.min(deltaTime / 1000, 0.1); // Cap delta time
+        time += dt;
+        scrollOffset += scrollSpeed * dt;
+
+        terrainMaterial.uniforms.time.value = time;
+        terrainMaterial.uniforms.scrollOffset.value = scrollOffset;
+
+        for (let i = 0; i < pos.length; i += 3) {
+          pos[i + 1] = getTerrainHeight(pos[i] + scrollOffset, pos[i + 2]);
+        }
+        posAttr.needsUpdate = true;
+        
+        // FIXED: Skip normal recalculation on mobile
+        if (!isMobile) {
+          terrainGeometry.computeVertexNormals();
+        }
+
+        updateWalls();
+
+        if (animalGroup.visible) {
+          animalGroup.children.forEach(a => {
+            let newX = a.userData.initialX - (scrollOffset % (terrainSize * 2));
+            while (newX < -terrainSize / 2) newX += terrainSize;
+            while (newX > terrainSize / 2) newX -= terrainSize;
+            a.position.set(newX, getTerrainHeight(a.userData.initialX, a.userData.initialZ), a.userData.initialZ);
+          });
+        }
+
+        // Ship movement
+        let baseX = Math.sin(time * 0.8) * 30 + Math.sin(time * 1.6) * 15;
+        let baseZ = Math.sin(time * 0.7) * 22 + Math.cos(time * 1.2) * 12;
+        let baseY = 50 + Math.sin(time * 0.9) * 10 + Math.sin(time * 2.2) * 4;
+        
+        let rollAngle = Math.sin(time * 0.4) * 0.06;
+        let pitchAngle = Math.sin(time * 0.7) * 0.12;
+        let yawAngle = Math.sin(time * 0.5) * 0.2;
+        
+        if (barrelRollActive) {
+          barrelRollProgress += dt / barrelRollDuration;
+          if (barrelRollProgress >= 1.0) {
+            barrelRollProgress = 0;
+            barrelRollActive = false;
+          } else {
+            const angle = barrelRollProgress * Math.PI * 2;
+            const loopRadius = 20;
+            baseY += Math.sin(angle) * loopRadius + (1 - Math.cos(angle)) * 25;
+            baseZ += (Math.cos(angle) - 1) * loopRadius;
+            rollAngle = angle;
+          }
+        }
+        
+        if (loopActive) {
+          loopProgress += dt / loopDuration;
+          if (loopProgress >= 1.0) {
+            loopProgress = 0;
+            loopActive = false;
+          } else {
+            const angle = loopProgress * Math.PI * 2;
+            const loopRadius = 30;
+            baseY += Math.sin(angle) * loopRadius;
+            baseX += (Math.cos(angle) - 1) * loopRadius;
+            pitchAngle = angle;
+          }
+        }
+        
+        heliGroup.position.x = baseX;
+        heliGroup.position.y = baseY;
+        heliGroup.position.z = baseZ;
+        heliGroup.rotation.y = yawAngle;
+        heliGroup.rotation.x = pitchAngle;
+        heliGroup.rotation.z = rollAngle;
+
+        // Update HUD
+        document.getElementById('altitude').textContent = Math.floor(heliGroup.position.y * 10 + 500).toString().padStart(4, '0');
+        document.getElementById('speed').textContent = Math.floor(150 + Math.sin(time) * 20).toString().padStart(3, '0');
+        document.getElementById('heading').textContent = Math.floor((Math.atan2(Math.sin(time * 0.3), Math.cos(time * 0.3)) * 180 / Math.PI + 360) % 360).toString().padStart(3, '0');
+        document.getElementById('lat').textContent = (47.3892 + time * 0.01).toFixed(4);
+        document.getElementById('lon').textContent = (-122.4821 + time * 0.0001).toFixed(4);
+
+        renderer.render(scene, camera);
+      }
+
+      // FIXED: Proper resize handling with debounce
+      function updateRendererSize() {
+        const dims = getContainerDimensions();
+        camera.aspect = dims.width / dims.height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(dims.width, dims.height);
+      }
       
-      let rollAngle = Math.sin(time * 0.4) * 0.06;
-      let pitchAngle = Math.sin(time * 0.7) * 0.12;
-      let yawAngle = Math.sin(time * 0.5) * 0.2;
+      const debouncedResize = debounce(() => {
+        // Recalculate mobile status
+        const wasMobile = isMobile;
+        isMobile = isMobileDevice();
+        
+        // If mobile status changed, update uniforms
+        if (wasMobile !== isMobile) {
+          terrainMaterial.uniforms.isMobile.value = isMobile ? 1.0 : 0.0;
+          volumeMaterial.uniforms.isMobile.value = isMobile ? 1.0 : 0.0;
+        }
+        
+        updateRendererSize();
+      }, 150);
       
-      if (barrelRollActive) {
-        barrelRollProgress += 0.016 / barrelRollDuration;
-        if (barrelRollProgress >= 1.0) {
+      window.addEventListener('resize', debouncedResize);
+      
+      // FIXED: Handle orientation change specifically
+      window.addEventListener('orientationchange', () => {
+        // Delay resize to allow browser to complete orientation change
+        setTimeout(updateRendererSize, 300);
+      });
+
+      // Theme system
+      const themes = {
+        desert: {
+          background: 0x00CED1, fog: 0x00CED1, title: 'DESERT RECON // XS-4',
+          colorSand: new THREE.Color(0xDEB8A0), colorDune: new THREE.Color(0xE8A87C), colorPeak: new THREE.Color(0x8B2942),
+          volumeBase: new THREE.Color(0x2F8B7B), volumeGrid: new THREE.Color(0x00FFFF),
+          keyLightColor: 0xFFFFFF, fillLightColor: 0xE8A87C, ambientColor: 0x00CED1,
+          hasRivers: false, riverColor: new THREE.Color(0x00FFFF),
+          hudColor: '#E8A87C', hudTitleColor: '#8B2942', hudLabelColor: '#DEB8A0', hudValueColor: '#00FFFF',
+          showAnimals: false
+        },
+        arctic: {
+          background: 0xB0E0E6, fog: 0xC4D4E0, title: 'ARCTIC RECON // XS-4',
+          colorSand: new THREE.Color(0xD6E5F0), colorDune: new THREE.Color(0xF0F8FF), colorPeak: new THREE.Color(0x4A6B8A),
+          volumeBase: new THREE.Color(0x5D6D7E), volumeGrid: new THREE.Color(0x7FFFD4),
+          keyLightColor: 0xF0F8FF, fillLightColor: 0xB0E0E6, ambientColor: 0xE6F2F7,
+          hasRivers: true, riverColor: new THREE.Color(0xA8C8DC),
+          hudColor: '#4A6B8A', hudTitleColor: '#2C3E50', hudLabelColor: '#A8C8DC', hudValueColor: '#7FFFD4',
+          showAnimals: true
+        },
+        jungle: {
+          background: 0xA8BF6A, fog: 0xC9B458, title: 'JUNGLE RECON // XS-4',
+          colorSand: new THREE.Color(0xD4A857), colorDune: new THREE.Color(0xC46A41), colorPeak: new THREE.Color(0x1B4D3E),
+          volumeBase: new THREE.Color(0x7A6840), volumeGrid: new THREE.Color(0x39FF14),
+          keyLightColor: 0xC9B458, fillLightColor: 0xA8BF6A, ambientColor: 0xA8BF6A,
+          hasRivers: true, riverColor: new THREE.Color(0x0277BD),
+          hudColor: '#6B8E23', hudTitleColor: '#1B4D3E', hudLabelColor: '#C46A41', hudValueColor: '#39FF14',
+          showAnimals: false
+        }
+      };
+
+      function applyTheme(themeName) {
+        const t = themes[themeName];
+        renderer.setClearColor(t.background);
+        scene.fog.color.setHex(t.fog);
+        terrainMaterial.uniforms.colorSand.value = t.colorSand;
+        terrainMaterial.uniforms.colorDune.value = t.colorDune;
+        terrainMaterial.uniforms.colorPeak.value = t.colorPeak;
+        terrainMaterial.uniforms.hasRivers.value = t.hasRivers ? 1.0 : 0.0;
+        terrainMaterial.uniforms.riverColor.value = t.riverColor;
+        volumeMaterial.uniforms.baseColor.value = t.volumeBase;
+        volumeMaterial.uniforms.gridColor.value = t.volumeGrid;
+        volumeMaterial.uniforms.edgeColor.value = t.volumeGrid;
+        keyLight.color.setHex(t.keyLightColor);
+        fillLight.color.setHex(t.fillLightColor);
+        ambientLight.color.setHex(t.ambientColor);
+        animalGroup.visible = t.showAnimals;
+        
+        // Update CSS custom properties
+        document.documentElement.style.setProperty('--hud-color', t.hudColor);
+        document.documentElement.style.setProperty('--hud-title-color', t.hudTitleColor);
+        document.documentElement.style.setProperty('--hud-label-color', t.hudLabelColor);
+        document.documentElement.style.setProperty('--hud-value-color', t.hudValueColor);
+        
+        document.querySelector('.hud-top-left .title').textContent = `◈ ${t.title}`;
+        document.querySelectorAll('.hud').forEach(h => h.style.color = t.hudColor);
+        document.querySelectorAll('.title').forEach(h => h.style.color = t.hudTitleColor);
+        document.querySelectorAll('.label').forEach(h => h.style.color = t.hudLabelColor);
+        document.querySelectorAll('.value').forEach(h => h.style.color = t.hudValueColor);
+        document.querySelectorAll('.theme-btn[data-theme]').forEach(b => { 
+          b.classList.remove('active'); 
+          if (b.dataset.theme === themeName) b.classList.add('active'); 
+        });
+      }
+
+      // Event listeners
+      document.querySelectorAll('.theme-btn[data-theme]').forEach(btn => {
+        btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
+      });
+      
+      document.getElementById('barrel-roll-btn').addEventListener('click', () => {
+        if (!barrelRollActive) {
+          barrelRollActive = true;
           barrelRollProgress = 0;
-          barrelRollActive = false;
-        } else {
-          const t = barrelRollProgress;
-          const angle = t * Math.PI * 2;
-          const loopRadius = 20;
-          
-          baseY += Math.sin(angle) * loopRadius + (1 - Math.cos(angle)) * 25;
-          baseZ += (Math.cos(angle) - 1) * loopRadius;
-          
-          rollAngle = angle;
         }
-      }
-      
-      if (loopActive) {
-        loopProgress += 0.016 / loopDuration;
-        if (loopProgress >= 1.0) {
+      });
+
+      document.getElementById('loop-btn').addEventListener('click', () => {
+        if (!loopActive) {
+          loopActive = true;
           loopProgress = 0;
-          loopActive = false;
-        } else {
-          const t = loopProgress;
-          const angle = t * Math.PI * 2;
-          const loopRadius = 30;
-          
-          baseY += Math.sin(angle) * loopRadius;
-          baseX += (Math.cos(angle) - 1) * loopRadius;
-          
-          pitchAngle = angle;
         }
-      }
+      });
+
+      // FIXED: Visibility change handling for mobile
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          cancelAnimationFrame(animationId);
+        } else {
+          lastTime = performance.now();
+          animate(lastTime);
+        }
+      });
+
+      // Initialize
+      updateWalls();
+      updateRendererSize();
       
-      heliGroup.position.x = baseX;
-      heliGroup.position.y = baseY;
-      heliGroup.position.z = baseZ;
-      heliGroup.rotation.y = yawAngle;
-      heliGroup.rotation.x = pitchAngle;
-      heliGroup.rotation.z = rollAngle;
-
-      document.getElementById('altitude').textContent = Math.floor(heliGroup.position.y * 10 + 500).toString().padStart(4, '0');
-      document.getElementById('speed').textContent = Math.floor(150 + Math.sin(time) * 20).toString().padStart(3, '0');
-      document.getElementById('heading').textContent = Math.floor((Math.atan2(Math.sin(time * 0.3), Math.cos(time * 0.3)) * 180 / Math.PI + 360) % 360).toString().padStart(3, '0');
-      document.getElementById('lat').textContent = (47.3892 + time * 0.01).toFixed(4);
-      document.getElementById('lon').textContent = (-122.4821 + time * 0.0001).toFixed(4);
-
-      renderer.render(scene, camera);
+      // Hide loading overlay
+      const loadingOverlay = document.getElementById('loading');
+      loadingOverlay.classList.add('hidden');
+      
+      // Start animation
+      lastTime = performance.now();
+      animate(lastTime);
     }
-
-    function updateRendererSize() {
-      const container = document.getElementById('canvas-container');
-      const width = container.clientWidth;
-      const height = container.clientHeight;
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
-    }
-    
-    window.addEventListener('resize', updateRendererSize);
-    setTimeout(updateRendererSize, 0);
-
-    const themes = {
-      desert: {
-        background: 0x00CED1, fog: 0x00CED1, title: 'DESERT RECON // XS-4',
-        colorSand: new THREE.Color(0xDEB8A0), colorDune: new THREE.Color(0xE8A87C), colorPeak: new THREE.Color(0x8B2942),
-        volumeBase: new THREE.Color(0x2F8B7B), volumeGrid: new THREE.Color(0x00FFFF),
-        keyLightColor: 0xFFFFFF, fillLightColor: 0xE8A87C, ambientColor: 0x00CED1,
-        hasRivers: false, riverColor: new THREE.Color(0x00FFFF),
-        hudColor: '#E8A87C', hudTitleColor: '#8B2942', hudLabelColor: '#DEB8A0', hudValueColor: '#00FFFF',
-        showAnimals: false
-      },
-      arctic: {
-        background: 0xB0E0E6, fog: 0xC4D4E0, title: 'ARCTIC RECON // XS-4',
-        colorSand: new THREE.Color(0xD6E5F0), colorDune: new THREE.Color(0xF0F8FF), colorPeak: new THREE.Color(0x4A6B8A),
-        volumeBase: new THREE.Color(0x5D6D7E), volumeGrid: new THREE.Color(0x7FFFD4),
-        keyLightColor: 0xF0F8FF, fillLightColor: 0xB0E0E6, ambientColor: 0xE6F2F7,
-        hasRivers: true, riverColor: new THREE.Color(0xA8C8DC),
-        hudColor: '#4A6B8A', hudTitleColor: '#2C3E50', hudLabelColor: '#A8C8DC', hudValueColor: '#7FFFD4',
-        showAnimals: true
-      },
-      jungle: {
-        background: 0xA8BF6A, fog: 0xC9B458, title: 'JUNGLE RECON // XS-4',
-        colorSand: new THREE.Color(0xD4A857), colorDune: new THREE.Color(0xC46A41), colorPeak: new THREE.Color(0x1B4D3E),
-        volumeBase: new THREE.Color(0x7A6840), volumeGrid: new THREE.Color(0x39FF14),
-        keyLightColor: 0xC9B458, fillLightColor: 0xA8BF6A, ambientColor: 0xA8BF6A,
-        hasRivers: true, riverColor: new THREE.Color(0x0277BD),
-        hudColor: '#6B8E23', hudTitleColor: '#1B4D3E', hudLabelColor: '#C46A41', hudValueColor: '#39FF14',
-        showAnimals: false
-      }
-    };
-
-    function applyTheme(themeName) {
-      const t = themes[themeName];
-      renderer.setClearColor(t.background);
-      scene.fog.color.setHex(t.fog);
-      terrainMaterial.uniforms.colorSand.value = t.colorSand;
-      terrainMaterial.uniforms.colorDune.value = t.colorDune;
-      terrainMaterial.uniforms.colorPeak.value = t.colorPeak;
-      terrainMaterial.uniforms.hasRivers.value = t.hasRivers ? 1.0 : 0.0;
-      terrainMaterial.uniforms.riverColor.value = t.riverColor;
-      volumeMaterial.uniforms.baseColor.value = t.volumeBase;
-      volumeMaterial.uniforms.gridColor.value = t.volumeGrid;
-      volumeMaterial.uniforms.edgeColor.value = t.volumeGrid;
-      keyLight.color.setHex(t.keyLightColor);
-      fillLight.color.setHex(t.fillLightColor);
-      ambientLight.color.setHex(t.ambientColor);
-      animalGroup.visible = t.showAnimals;
-      document.querySelector('.hud-top-left .title').textContent = `◈ ${t.title}`;
-      document.querySelectorAll('.hud').forEach(h => h.style.color = t.hudColor);
-      document.querySelectorAll('.title').forEach(h => h.style.color = t.hudTitleColor);
-      document.querySelectorAll('.label').forEach(h => h.style.color = t.hudLabelColor);
-      document.querySelectorAll('.value').forEach(h => h.style.color = t.hudValueColor);
-      document.querySelectorAll('.theme-btn').forEach(b => { b.classList.remove('active'); if (b.dataset.theme === themeName) b.classList.add('active'); });
-    }
-
-    document.querySelectorAll('.theme-btn[data-theme]').forEach(btn => btn.addEventListener('click', () => applyTheme(btn.dataset.theme)));
-    
-    document.getElementById('barrel-roll-btn').addEventListener('click', () => {
-      if (!barrelRollActive) {
-        barrelRollActive = true;
-        barrelRollProgress = 0;
-        rollStartX = heliGroup.position.x;
-        rollStartY = heliGroup.position.y;
-        rollStartZ = heliGroup.position.z;
-      }
-    });
-
-    document.getElementById('loop-btn').addEventListener('click', () => {
-      if (!loopActive) {
-        loopActive = true;
-        loopProgress = 0;
-      }
-    });
-
-    updateWalls();
-    animate();
   </script>
 </body>
 </html>
