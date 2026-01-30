@@ -2,39 +2,30 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <!-- FIXED: Removed user-scalable=no for accessibility, kept viewport-fit for notched devices -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>XS-4 Terrain Scanner</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap');
     
     :root {
-      /* CSS Custom Properties for easier theming */
       --bottom-panel-height: 115px;
       --hud-color: #E8A87C;
       --hud-title-color: #8B2942;
       --hud-label-color: #DEB8A0;
       --hud-value-color: #00FFFF;
-      /* Safe area insets for notched devices */
       --safe-area-bottom: env(safe-area-inset-bottom, 0px);
     }
     
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    
-    html, body {
-      height: 100%;
-      overflow: hidden;
-    }
+    html, body { height: 100%; overflow: hidden; }
     
     body { 
       background: #0a0a0a; 
       font-family: 'Share Tech Mono', monospace; 
-      /* FIXED: More specific touch-action */
       touch-action: manipulation;
       -webkit-touch-callout: none; 
       -webkit-user-select: none; 
       user-select: none;
-      /* Prevent overscroll bounce on iOS */
       overscroll-behavior: none;
     }
     
@@ -44,7 +35,6 @@
       left: 0; 
       right: 0; 
       bottom: calc(var(--bottom-panel-height) + var(--safe-area-bottom));
-      /* FIXED: Ensure container establishes dimensions before JS reads them */
       min-height: 0;
     }
     
@@ -52,7 +42,6 @@
       display: block; 
       width: 100% !important; 
       height: 100% !important;
-      /* FIXED: Prevent canvas from causing layout issues */
       position: absolute;
       top: 0;
       left: 0;
@@ -72,24 +61,11 @@
       justify-content: center; 
       z-index: 102; 
       padding-top: 12px;
-      /* FIXED: Use transform for GPU compositing instead of backdrop-filter */
       transform: translateZ(0);
-      will-change: transform;
     }
     
-    .button-container { 
-      display: flex; 
-      flex-direction: column; 
-      align-items: center; 
-      gap: 10px; 
-    }
-    
-    .action-controls { 
-      display: flex; 
-      gap: 12px; 
-      justify-content: center; 
-      align-items: center; 
-    }
+    .button-container { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .action-controls { display: flex; gap: 12px; justify-content: center; align-items: center; }
     
     .hud { 
       position: fixed; 
@@ -99,74 +75,28 @@
       letter-spacing: 2px; 
       pointer-events: none; 
       text-shadow: 0 0 8px rgba(0,0,0,0.8); 
-      background: rgba(0,0,0,0.25); 
-      /* FIXED: Removed backdrop-filter for mobile performance - use solid bg instead */
+      background: rgba(0,0,0,0.4);
       padding: 15px; 
       border-radius: 8px; 
       z-index: 101;
-      /* FIXED: Force GPU layer */
       transform: translateZ(0);
-      will-change: transform;
-    }
-    
-    /* FIXED: Add backdrop-filter only for devices that support it well */
-    @supports (backdrop-filter: blur(8px)) {
-      @media (min-width: 769px) {
-        .hud {
-          backdrop-filter: blur(8px);
-          background: rgba(0,0,0,0.15);
-        }
-      }
     }
     
     .hud-top-left { top: 20px; left: 20px; }
     .hud-top-right { top: 20px; right: 20px; text-align: right; }
     .hud-bottom-left { bottom: calc(var(--bottom-panel-height) + 15px + var(--safe-area-bottom)); left: 20px; }
     
-    .title { 
-      font-family: 'Orbitron', sans-serif; 
-      font-size: 16px; 
-      font-weight: 700; 
-      margin-bottom: 10px; 
-      color: var(--hud-title-color); 
-    }
-    
+    .title { font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 10px; color: var(--hud-title-color); }
     .data-row { margin: 5px 0; }
     .label { color: var(--hud-label-color); font-weight: 600; }
     .value { color: var(--hud-value-color); font-weight: 700; }
     
-    /* FIXED: Simplified scanline effect for mobile */
-    .scanline { 
-      position: fixed; 
-      inset: 0; 
-      pointer-events: none; 
-      z-index: 100;
-      opacity: 0.3;
-    }
-    
+    .scanline { position: fixed; inset: 0; pointer-events: none; z-index: 100; display: none; }
     @media (min-width: 769px) {
-      .scanline {
-        background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.005) 2px, rgba(0,0,0,0.005) 4px);
-        opacity: 1;
-      }
+      .scanline { display: block; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.003) 2px, rgba(0,0,0,0.003) 4px); }
     }
     
-    .vignette { 
-      position: fixed; 
-      inset: 0; 
-      pointer-events: none; 
-      background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.08) 100%); 
-      z-index: 99; 
-    }
-    
-    .theme-controls { 
-      display: flex; 
-      gap: 12px; 
-      flex-wrap: wrap; 
-      justify-content: center; 
-      align-items: center; 
-      padding: 0 10px; 
-    }
+    .theme-controls { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; align-items: center; padding: 0 10px; }
     
     .theme-btn { 
       padding: 14px 24px; 
@@ -181,10 +111,8 @@
       font-weight: 700; 
       border-radius: 4px; 
       white-space: nowrap;
-      /* FIXED: Better touch targets */
       min-height: 48px;
       min-width: 48px;
-      /* FIXED: Prevent tap highlight on mobile */
       -webkit-tap-highlight-color: transparent;
     }
     
@@ -196,85 +124,16 @@
       border-color: #FF2A2A; 
       color: #FFD700;
       background: linear-gradient(135deg, rgba(255,42,42,0.15) 0%, rgba(0,0,0,0.7) 50%, rgba(255,215,0,0.1) 100%);
-      position: relative;
-      clip-path: polygon(12px 0%, 100% 0%, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0% 100%, 0% 12px);
-      text-shadow: 0 0 10px rgba(255,215,0,0.9), 0 0 20px rgba(255,42,42,0.5);
+      text-shadow: 0 0 10px rgba(255,215,0,0.9);
       box-shadow: inset 0 0 20px rgba(255,42,42,0.2), 0 0 15px rgba(255,42,42,0.4);
-      font-weight: 800;
-      letter-spacing: 3px;
     }
     
-    .theme-btn.barrel-roll::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, #FF2A2A, #FFD700, #FF2A2A, transparent);
-    }
-    
-    .theme-btn.barrel-roll::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, rgba(255,215,0,0.6), rgba(255,42,42,0.6), transparent);
-    }
-    
-    /* FIXED: Use active state instead of hover for mobile */
-    .theme-btn:active,
-    .theme-btn.barrel-roll:active { 
-      background: linear-gradient(135deg, rgba(255,42,42,0.3) 0%, rgba(0,0,0,0.5) 50%, rgba(255,215,0,0.2) 100%);
-      transform: scale(0.98);
-    }
-    
-    @media (hover: hover) {
-      .theme-btn:hover { 
-        background: rgba(255,255,255,0.15); 
-        box-shadow: 0 0 15px currentColor; 
-      }
-      .theme-btn.barrel-roll:hover { 
-        background: linear-gradient(135deg, rgba(255,42,42,0.3) 0%, rgba(0,0,0,0.5) 50%, rgba(255,215,0,0.2) 100%);
-        box-shadow: inset 0 0 30px rgba(255,42,42,0.3), 0 0 30px rgba(255,42,42,0.6), 0 0 10px rgba(255,215,0,0.4);
-        text-shadow: 0 0 15px rgba(255,215,0,1), 0 0 30px rgba(255,42,42,0.8);
-        border-color: #FFD700;
-      }
-    }
-    
-    .theme-btn.active { 
-      transform: scale(1.05); 
-      background: rgba(255,255,255,0.2); 
-      box-shadow: 0 0 20px currentColor; 
-    }
-    
-    /* Scan button styling */
     .theme-btn.scan-btn {
       border-color: #00FF88;
       color: #00FF88;
       background: linear-gradient(135deg, rgba(0,255,136,0.1) 0%, rgba(0,0,0,0.7) 50%, rgba(0,255,136,0.05) 100%);
       text-shadow: 0 0 10px rgba(0,255,136,0.9);
       box-shadow: inset 0 0 15px rgba(0,255,136,0.15), 0 0 12px rgba(0,255,136,0.3);
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .theme-btn.scan-btn::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(0,255,136,0.3), transparent);
-      transition: left 0.5s ease;
-    }
-    
-    .theme-btn.scan-btn:hover::before,
-    .theme-btn.scan-btn.scanning::before {
-      left: 100%;
     }
     
     .theme-btn.scan-btn.scanning {
@@ -287,184 +146,98 @@
       50% { box-shadow: inset 0 0 25px rgba(0,255,136,0.4), 0 0 25px rgba(0,255,136,0.6); }
     }
     
-    /* Scan beam is rendered in Three.js - no CSS overlay needed */
+    .theme-btn:active { transform: scale(0.98); }
+    .theme-btn.active { transform: scale(1.05); background: rgba(255,255,255,0.2); box-shadow: 0 0 20px currentColor; }
     
-    /* Scan report - transparent holographic overlay */
+    /* SCAN REPORT - Compact floating panel that doesn't block view */
     .scan-report {
       position: fixed;
-      top: 20px;
-      right: 20px;
-      transform: translateX(120%);
-      background: linear-gradient(135deg, rgba(0,20,15,0.75) 0%, rgba(0,10,8,0.7) 100%);
-      border: 1px solid rgba(0,255,136,0.4);
-      border-radius: 12px;
-      padding: 0;
-      width: 340px;
-      max-width: calc(100vw - 40px);
-      max-height: calc(100vh - var(--bottom-panel-height) - 60px);
+      top: 15px;
+      right: 15px;
+      transform: translateX(calc(100% + 20px)) scale(0.95);
+      background: rgba(0,15,10,0.85);
+      border: 1px solid rgba(0,255,136,0.5);
+      border-radius: 8px;
+      width: 280px;
+      max-height: calc(100vh - var(--bottom-panel-height) - 40px - var(--safe-area-bottom));
       overflow: hidden;
-      z-index: 200;
+      z-index: 150;
       opacity: 0;
       pointer-events: none;
-      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      box-shadow: 
-        0 0 30px rgba(0,255,136,0.2),
-        inset 0 0 40px rgba(0,255,136,0.03);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 0 25px rgba(0,255,136,0.25);
     }
     
     .scan-report.visible {
       opacity: 1;
       pointer-events: auto;
-      transform: translateX(0);
+      transform: translateX(0) scale(1);
     }
     
     .scan-report.fading-out {
       opacity: 0;
-      transform: translateX(120%);
-      transition: all 0.4s ease-in;
-    }
-    
-    /* Holographic scan lines effect on report */
-    .scan-report::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0,255,136,0.03) 2px,
-        rgba(0,255,136,0.03) 4px
-      );
-      pointer-events: none;
-      z-index: 1;
-    }
-    
-    /* Animated scan line across report */
-    .scan-report::after {
-      content: '';
-      position: absolute;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, rgba(0,255,136,0.6), transparent);
-      top: 0;
-      animation: report-scan 2s linear infinite;
-      pointer-events: none;
-      z-index: 2;
-    }
-    
-    @keyframes report-scan {
-      0% { top: 0; opacity: 0; }
-      10% { opacity: 1; }
-      90% { opacity: 1; }
-      100% { top: 100%; opacity: 0; }
+      transform: translateX(calc(100% + 20px)) scale(0.95);
+      transition: all 0.3s ease-in;
     }
     
     .scan-report-header {
-      background: linear-gradient(90deg, rgba(0,255,136,0.15), transparent);
-      padding: 12px 15px;
-      border-bottom: 1px solid rgba(0,255,136,0.2);
+      background: linear-gradient(90deg, rgba(0,255,136,0.2), transparent);
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(0,255,136,0.3);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      position: relative;
-      z-index: 3;
     }
     
     .scan-report-title {
       font-family: 'Orbitron', sans-serif;
-      font-size: 12px;
+      font-size: 11px;
       color: #00FF88;
-      letter-spacing: 3px;
+      letter-spacing: 2px;
       text-transform: uppercase;
-      text-shadow: 0 0 10px rgba(0,255,136,0.8);
-    }
-    
-    .scan-report-close {
-      display: none; /* Hide close button - auto dismisses */
+      text-shadow: 0 0 8px rgba(0,255,136,0.8);
     }
     
     .scan-report-content {
-      padding: 15px;
-      max-height: calc(100vh - var(--bottom-panel-height) - 120px);
+      padding: 12px;
+      max-height: calc(100vh - var(--bottom-panel-height) - 100px - var(--safe-area-bottom));
       overflow-y: auto;
-      position: relative;
-      z-index: 3;
-      
-      /* Custom scrollbar for holographic look */
       scrollbar-width: thin;
       scrollbar-color: rgba(0,255,136,0.3) transparent;
     }
     
-    .scan-report-content::-webkit-scrollbar {
-      width: 4px;
-    }
+    .scan-report-content::-webkit-scrollbar { width: 3px; }
+    .scan-report-content::-webkit-scrollbar-track { background: transparent; }
+    .scan-report-content::-webkit-scrollbar-thumb { background: rgba(0,255,136,0.3); border-radius: 2px; }
     
-    .scan-report-content::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    
-    .scan-report-content::-webkit-scrollbar-thumb {
-      background: rgba(0,255,136,0.3);
-      border-radius: 2px;
-    }
-    
-    .scan-section {
-      margin-bottom: 15px;
-      animation: section-fade-in 0.3s ease forwards;
-      opacity: 0;
-    }
-    
-    .scan-section:nth-child(1) { animation-delay: 0.1s; }
-    .scan-section:nth-child(2) { animation-delay: 0.2s; }
-    .scan-section:nth-child(3) { animation-delay: 0.3s; }
-    .scan-section:nth-child(4) { animation-delay: 0.4s; }
-    .scan-section:nth-child(5) { animation-delay: 0.5s; }
-    .scan-section:nth-child(6) { animation-delay: 0.6s; }
-    
-    @keyframes section-fade-in {
-      from { 
-        opacity: 0; 
-        transform: translateX(20px);
-      }
-      to { 
-        opacity: 1; 
-        transform: translateX(0);
-      }
-    }
-    
-    .scan-section:last-child {
-      margin-bottom: 0;
-    }
+    .scan-section { margin-bottom: 12px; }
+    .scan-section:last-child { margin-bottom: 0; }
     
     .scan-section-title {
       font-family: 'Orbitron', sans-serif;
-      font-size: 10px;
+      font-size: 9px;
       color: #00FFFF;
-      letter-spacing: 2px;
-      margin-bottom: 8px;
-      padding-bottom: 4px;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+      padding-bottom: 3px;
       border-bottom: 1px solid rgba(0,255,255,0.2);
     }
     
     .scan-data-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 6px;
+      gap: 4px;
     }
     
     .scan-data-item {
       background: rgba(0,255,136,0.05);
       border: 1px solid rgba(0,255,136,0.1);
-      border-radius: 4px;
-      padding: 8px;
+      border-radius: 3px;
+      padding: 6px;
     }
     
     .scan-data-label {
-      font-size: 8px;
+      font-size: 7px;
       color: rgba(255,255,255,0.5);
       text-transform: uppercase;
       letter-spacing: 1px;
@@ -473,87 +246,39 @@
     
     .scan-data-value {
       font-family: 'Share Tech Mono', monospace;
-      font-size: 12px;
+      font-size: 11px;
       color: #00FF88;
       font-weight: 700;
     }
     
-    .scan-data-value.warning {
-      color: #FFD700;
-    }
+    .scan-data-value.warning { color: #FFD700; }
+    .scan-data-value.danger { color: #FF4444; }
+    .scan-data-value.info { color: #00FFFF; }
     
-    .scan-data-value.danger {
-      color: #FF4444;
-    }
-    
-    .scan-data-value.info {
-      color: #00FFFF;
-    }
-    
-    .scan-findings {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
+    .scan-findings { list-style: none; padding: 0; margin: 0; }
     
     .scan-finding {
       display: flex;
       align-items: flex-start;
-      gap: 8px;
-      padding: 8px;
+      gap: 6px;
+      padding: 6px;
       background: rgba(0,0,0,0.2);
-      border-radius: 4px;
-      margin-bottom: 6px;
+      border-radius: 3px;
+      margin-bottom: 4px;
       border-left: 2px solid;
     }
     
-    .scan-finding.anomaly {
-      border-color: #FFD700;
-    }
+    .scan-finding.anomaly { border-color: #FFD700; }
+    .scan-finding.resource { border-color: #00FF88; }
+    .scan-finding.hazard { border-color: #FF4444; }
+    .scan-finding.life { border-color: #00FFFF; }
     
-    .scan-finding.resource {
-      border-color: #00FF88;
-    }
+    .scan-finding-icon { font-size: 12px; flex-shrink: 0; }
+    .scan-finding-text { flex: 1; min-width: 0; }
+    .scan-finding-title { font-size: 10px; color: rgba(255,255,255,0.9); margin-bottom: 1px; font-weight: 600; }
+    .scan-finding-desc { font-size: 8px; color: rgba(255,255,255,0.5); line-height: 1.2; }
+    .scan-coordinates { font-family: 'Share Tech Mono', monospace; font-size: 7px; color: rgba(0,255,136,0.6); margin-top: 2px; }
     
-    .scan-finding.hazard {
-      border-color: #FF4444;
-    }
-    
-    .scan-finding.life {
-      border-color: #00FFFF;
-    }
-    
-    .scan-finding-icon {
-      font-size: 14px;
-      flex-shrink: 0;
-    }
-    
-    .scan-finding-text {
-      flex: 1;
-      min-width: 0;
-    }
-    
-    .scan-finding-title {
-      font-size: 11px;
-      color: rgba(255,255,255,0.9);
-      margin-bottom: 2px;
-      font-weight: 600;
-    }
-    
-    .scan-finding-desc {
-      font-size: 9px;
-      color: rgba(255,255,255,0.5);
-      line-height: 1.3;
-    }
-    
-    .scan-coordinates {
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 8px;
-      color: rgba(0,255,136,0.6);
-      margin-top: 3px;
-    }
-    
-    /* Progress indicator at bottom */
     .scan-progress-bar {
       position: absolute;
       bottom: 0;
@@ -562,120 +287,65 @@
       background: linear-gradient(90deg, #00FF88, #00FFFF);
       width: 0%;
       transition: width 0.1s linear;
-      z-index: 10;
     }
     
+    /* Mobile: smaller report at top-right, doesn't cover much */
     @media (max-width: 768px) {
+      :root { --bottom-panel-height: 115px; }
+      
+      .hud { font-size: 10px; padding: 8px; letter-spacing: 1px; }
+      .hud-top-left { top: 10px; left: 10px; }
+      .hud-top-right { display: none; }
+      .hud-bottom-left { display: none; }
+      .title { font-size: 11px; margin-bottom: 5px; }
+      .data-row { margin: 2px 0; }
+      
+      .theme-btn { padding: 10px 14px; font-size: 10px; letter-spacing: 1px; min-height: 44px; }
+      .theme-controls { gap: 8px; }
+      .action-controls { gap: 8px; }
+      .button-container { gap: 8px; }
+      
       .scan-report {
-        top: auto;
-        bottom: calc(var(--bottom-panel-height) + 10px + var(--safe-area-bottom));
+        top: 10px;
         right: 10px;
-        left: 10px;
-        width: auto;
-        max-height: 50vh;
-        transform: translateY(120%);
-      }
-      
-      .scan-report.visible {
-        transform: translateY(0);
-      }
-      
-      .scan-report.fading-out {
-        transform: translateY(120%);
-      }
-      
-      .scan-report-content {
-        max-height: calc(50vh - 50px);
-      }
-      
-      .scan-data-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 4px;
-      }
-      
-      .scan-data-item {
-        padding: 6px;
-      }
-      
-      .scan-data-value {
-        font-size: 11px;
-      }
-    }
-    
-    @media (max-width: 480px) {
-      .scan-report {
+        width: 200px;
         max-height: 45vh;
       }
       
-      .scan-report-title {
-        font-size: 10px;
-        letter-spacing: 2px;
-      }
-      
-      .scan-report-content {
-        padding: 10px;
-        max-height: calc(45vh - 45px);
-      }
-      
-      .scan-section {
-        margin-bottom: 10px;
-      }
-      
-      .scan-finding {
-        padding: 6px;
-      }
-      
-      .scan-finding-title {
-        font-size: 10px;
-      }
-      
-      .scan-finding-desc {
-        font-size: 8px;
-      }
+      .scan-report-header { padding: 8px 10px; }
+      .scan-report-title { font-size: 9px; letter-spacing: 1px; }
+      .scan-report-content { padding: 8px; max-height: calc(45vh - 40px); }
+      .scan-section { margin-bottom: 8px; }
+      .scan-section-title { font-size: 8px; margin-bottom: 4px; }
+      .scan-data-item { padding: 4px; }
+      .scan-data-label { font-size: 6px; }
+      .scan-data-value { font-size: 9px; }
+      .scan-finding { padding: 4px; gap: 4px; }
+      .scan-finding-icon { font-size: 10px; }
+      .scan-finding-title { font-size: 9px; }
+      .scan-finding-desc { font-size: 7px; }
     }
     
-    /* Tablet */
-    @media (max-width: 900px) {
-      :root {
-        --bottom-panel-height: 115px;
-      }
-      .theme-btn { padding: 12px 18px; font-size: 12px; letter-spacing: 1px; }
-      .theme-controls { gap: 10px; }
-    }
-    
-    /* Mobile */
-    @media (max-width: 768px) {
-      :root {
-        --bottom-panel-height: 120px;
-      }
-      .hud { font-size: 10px; padding: 10px; letter-spacing: 1px; }
-      .hud-top-left { top: 10px; left: 10px; }
-      .hud-top-right { top: 10px; right: 10px; }
-      .title { font-size: 12px; margin-bottom: 6px; }
-      .data-row { margin: 3px 0; }
-      .button-container { gap: 8px; }
-      .theme-controls { gap: 8px; }
-      .action-controls { gap: 8px; }
-      .theme-btn { padding: 10px 14px; font-size: 10px; letter-spacing: 1px; }
-    }
-    
-    /* Small mobile */
     @media (max-width: 480px) {
-      :root {
-        --bottom-panel-height: 105px;
-      }
-      .hud-top-right { display: none; }
-      .hud-bottom-left { display: none; }
-      .hud-top-left { top: 8px; left: 8px; padding: 8px; }
-      .title { font-size: 10px; }
-      .hud { font-size: 9px; }
-      .button-container { gap: 6px; }
-      .theme-btn { padding: 8px 10px; font-size: 9px; min-height: 44px; min-width: 44px; }
+      :root { --bottom-panel-height: 105px; }
+      
+      .hud-top-left { top: 8px; left: 8px; padding: 6px; }
+      .title { font-size: 9px; }
+      .hud { font-size: 8px; }
+      
+      .theme-btn { padding: 8px 10px; font-size: 9px; min-height: 40px; }
       .theme-controls { gap: 6px; }
       .action-controls { gap: 6px; }
+      
+      .scan-report {
+        width: 170px;
+        max-height: 40vh;
+      }
+      
+      .scan-report-content { max-height: calc(40vh - 35px); }
+      .scan-data-grid { grid-template-columns: 1fr; }
     }
     
-    /* FIXED: Loading state */
     .loading-overlay {
       position: fixed;
       inset: 0;
@@ -687,15 +357,12 @@
       transition: opacity 0.5s ease;
     }
     
-    .loading-overlay.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
+    .loading-overlay.hidden { opacity: 0; pointer-events: none; }
     
     .loading-text {
       font-family: 'Orbitron', sans-serif;
       color: #00FFFF;
-      font-size: 18px;
+      font-size: 16px;
       letter-spacing: 4px;
       animation: pulse 1.5s ease-in-out infinite;
     }
@@ -707,26 +374,21 @@
   </style>
 </head>
 <body>
-  <!-- FIXED: Loading overlay -->
   <div class="loading-overlay" id="loading">
     <div class="loading-text">INITIALIZING...</div>
   </div>
   
   <div id="canvas-container"></div>
   
-  <!-- Scan report - holographic overlay -->
   <div class="scan-report" id="scan-report">
     <div class="scan-report-header">
-      <div class="scan-report-title">◈ Terrain Analysis</div>
+      <div class="scan-report-title">◈ Scan Results</div>
     </div>
-    <div class="scan-report-content" id="scan-report-content">
-      <!-- Dynamic content inserted here -->
-    </div>
+    <div class="scan-report-content" id="scan-report-content"></div>
     <div class="scan-progress-bar" id="scan-progress-bar"></div>
   </div>
   
   <div class="scanline"></div>
-  <div class="vignette"></div>
   
   <div class="hud hud-top-left">
     <div class="title">◈ DESERT RECON // XS-4</div>
@@ -762,50 +424,51 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script>
-    // ========== UTILITY FUNCTIONS ==========
-    
-    // FIXED: Debounce function for resize events
+    // ========== UTILITIES ==========
     function debounce(func, wait) {
       let timeout;
-      return function executedFunction(...args) {
-        const later = () => {
-          clearTimeout(timeout);
-          func(...args);
-        };
+      return function(...args) {
         clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
+        timeout = setTimeout(() => func(...args), wait);
       };
     }
     
-    // FIXED: Better mobile detection
     function isMobileDevice() {
-      // Check for touch capability AND screen size
       const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-      const isSmallScreen = window.innerWidth < 768 || window.innerHeight < 768;
+      const isSmallScreen = window.innerWidth < 768 || window.innerHeight < 600;
       const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      
-      // Consider it mobile if it has touch AND is either small screen or mobile UA
-      return hasTouch && (isSmallScreen || isMobileUA);
+      return (hasTouch && isSmallScreen) || isMobileUA;
     }
     
     // ========== SIMPLEX NOISE ==========
-    const SimplexNoise = (function () {
+    const SimplexNoise = (function() {
       const F2 = 0.5 * (Math.sqrt(3) - 1), G2 = (3 - Math.sqrt(3)) / 6;
       const grad3 = [[1,1,0],[-1,1,0],[1,-1,0],[-1,-1,0],[1,0,1],[-1,0,1],[1,0,-1],[-1,0,-1],[0,1,1],[0,-1,1],[0,1,-1],[0,-1,-1]];
       class SimplexNoise {
         constructor(seed = Math.random()) {
-          this.p = new Uint8Array(256); this.perm = new Uint8Array(512); this.permMod12 = new Uint8Array(512);
+          this.p = new Uint8Array(256);
+          this.perm = new Uint8Array(512);
+          this.permMod12 = new Uint8Array(512);
           for (let i = 0; i < 256; i++) this.p[i] = i;
           let n, q;
-          for (let i = 255; i > 0; i--) { seed = (seed * 16807) % 2147483647; n = seed % (i + 1); q = this.p[i]; this.p[i] = this.p[n]; this.p[n] = q; }
-          for (let i = 0; i < 512; i++) { this.perm[i] = this.p[i & 255]; this.permMod12[i] = this.perm[i] % 12; }
+          for (let i = 255; i > 0; i--) { 
+            seed = (seed * 16807) % 2147483647; 
+            n = seed % (i + 1); 
+            q = this.p[i]; 
+            this.p[i] = this.p[n]; 
+            this.p[n] = q; 
+          }
+          for (let i = 0; i < 512; i++) { 
+            this.perm[i] = this.p[i & 255]; 
+            this.permMod12[i] = this.perm[i] % 12; 
+          }
         }
         noise2D(x, y) {
           const s = (x + y) * F2, i = Math.floor(x + s), j = Math.floor(y + s), t = (i + j) * G2;
           const X0 = i - t, Y0 = j - t, x0 = x - X0, y0 = y - Y0;
-          let i1, j1; if (x0 > y0) { i1 = 1; j1 = 0; } else { i1 = 0; j1 = 1; }
+          let i1, j1; 
+          if (x0 > y0) { i1 = 1; j1 = 0; } else { i1 = 0; j1 = 1; }
           const x1 = x0 - i1 + G2, y1 = y0 - j1 + G2, x2 = x0 - 1 + 2 * G2, y2 = y0 - 1 + 2 * G2;
           const ii = i & 255, jj = j & 255;
           let n0 = 0, n1 = 0, n2 = 0;
@@ -822,10 +485,7 @@
     })();
 
     // ========== INITIALIZATION ==========
-    
-    // Wait for DOM and fonts before initializing
     document.fonts.ready.then(() => {
-      // Small delay to ensure CSS has applied
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           initializeScene();
@@ -835,278 +495,249 @@
     
     function initializeScene() {
       const container = document.getElementById('canvas-container');
-      const scene = new THREE.Scene();
-      scene.fog = new THREE.FogExp2(0x00CED1, 0);
-      
-      // FIXED: Recalculate mobile status on resize
       let isMobile = isMobileDevice();
       
-      // FIXED: Get actual container dimensions
+      // ========== THREE.JS BEST PRACTICES: Configuration ==========
+      const config = {
+        // Limit pixel ratio - key mobile optimization
+        pixelRatio: Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2),
+        // Reduce geometry complexity on mobile
+        terrainSize: isMobile ? 140 : 200,
+        terrainSegments: isMobile ? 40 : 160,
+        wallSegments: isMobile ? 24 : 100,
+        // Static values
+        terrainHeight: 25,
+        volumeDepth: 50,
+        // Frame rate
+        targetFPS: isMobile ? 30 : 60
+      };
+      
+      const scene = new THREE.Scene();
+      // Disable fog on mobile - expensive
+      if (!isMobile) {
+        scene.fog = new THREE.FogExp2(0x00CED1, 0.001);
+      }
+      
       function getContainerDimensions() {
         const rect = container.getBoundingClientRect();
         return {
-          width: rect.width || window.innerWidth,
-          height: rect.height || (window.innerHeight - 115)
+          width: Math.floor(rect.width) || window.innerWidth,
+          height: Math.floor(rect.height) || (window.innerHeight - 115)
         };
       }
       
       const dims = getContainerDimensions();
       
+      // ========== CAMERA - Optimized frustum ==========
       const camera = new THREE.PerspectiveCamera(
-        isMobile ? 65 : 55, 
-        dims.width / dims.height, 
-        0.1, 
-        4000
+        isMobile ? 70 : 55,
+        dims.width / dims.height,
+        1,      // Near plane - as far as possible
+        1500    // Far plane - as close as possible (was 4000)
       );
-      camera.position.set(isMobile ? -180 : -200, isMobile ? 220 : 200, isMobile ? 180 : 200);
+      camera.position.set(isMobile ? -150 : -200, isMobile ? 180 : 200, isMobile ? 150 : 200);
       camera.lookAt(0, 0, 0);
 
-      // FIXED: Better renderer configuration
+      // ========== RENDERER - Best practices ==========
       const renderer = new THREE.WebGLRenderer({ 
-        antialias: !isMobile,
+        antialias: !isMobile,           // Disable AA on mobile
         powerPreference: isMobile ? 'low-power' : 'high-performance',
-        // FIXED: Enable alpha for better compositing
         alpha: false,
-        // FIXED: Preserve drawing buffer for mobile screenshots
-        preserveDrawingBuffer: isMobile,
-        // FIXED: Fail gracefully
+        stencil: false,                 // Disable stencil buffer if not used
+        depth: true,
+        preserveDrawingBuffer: false,   // Better performance
         failIfMajorPerformanceCaveat: false
       });
       
       renderer.setSize(dims.width, dims.height);
-      // FIXED: Better DPR handling - allow 1.5 on mobile for sharper rendering without huge perf hit
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2));
+      renderer.setPixelRatio(config.pixelRatio);
       renderer.setClearColor(0x00CED1);
-      renderer.outputEncoding = THREE.sRGBEncoding;
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      
+      // Disable expensive features on mobile
+      if (!isMobile) {
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      }
+      
       renderer.shadowMap.enabled = false;
+      renderer.sortObjects = true;      // Enable for transparency
       container.appendChild(renderer.domElement);
 
-      // FIXED: Handle WebGL context loss
-      renderer.domElement.addEventListener('webglcontextlost', (event) => {
-        event.preventDefault();
-        console.warn('WebGL context lost. Attempting recovery...');
+      // WebGL context handling
+      renderer.domElement.addEventListener('webglcontextlost', (e) => {
+        e.preventDefault();
         cancelAnimationFrame(animationId);
       }, false);
-
+      
       renderer.domElement.addEventListener('webglcontextrestored', () => {
-        console.log('WebGL context restored.');
-        animate();
+        lastTime = performance.now();
+        animate(lastTime);
       }, false);
 
       const simplex = new SimplexNoise(42);
       
-      // FIXED: Adaptive quality based on device
-      const terrainSize = isMobile ? 160 : 200;
-      const terrainSegments = isMobile ? 48 : 192;
-      const terrainHeight = 25;
-      const volumeDepth = 50;
-      const wallSegments = isMobile ? 32 : 128;
-
+      // ========== TERRAIN HEIGHT - Cached computation ==========
+      // Pre-compute noise values for better performance
       function getTerrainHeight(x, z) {
-        let height = 0; const scale = 0.018;
+        let height = 0;
+        const scale = 0.018;
         height += simplex.noise2D(x * scale, z * scale) * 1.0;
         height += simplex.noise2D(x * scale * 2.5, z * scale * 2.5) * 0.5;
-        // FIXED: Reduce octaves on mobile
+        // Skip extra octaves on mobile
         if (!isMobile) {
           height += simplex.noise2D(x * scale * 5, z * scale * 5) * 0.25;
-          height += simplex.noise2D(x * scale * 10, z * scale * 10) * 0.125;
         }
         height = Math.pow(Math.abs(height), 0.9) * Math.sign(height);
-        let finalHeight = height * terrainHeight;
+        let finalHeight = height * config.terrainHeight;
         const valleyFloor = -5.0, valleyThreshold = -2.0;
         if (finalHeight < valleyThreshold) {
-          const transitionFactor = (valleyThreshold - finalHeight) / (valleyThreshold - valleyFloor);
-          finalHeight = finalHeight * (1.0 - Math.min(1.0, transitionFactor)) + valleyFloor * Math.min(1.0, transitionFactor);
+          const transitionFactor = Math.min(1.0, (valleyThreshold - finalHeight) / (valleyThreshold - valleyFloor));
+          finalHeight = finalHeight * (1.0 - transitionFactor) + valleyFloor * transitionFactor;
         }
         return finalHeight;
       }
 
-      const terrainGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize, terrainSegments, terrainSegments);
+      // ========== TERRAIN GEOMETRY ==========
+      const terrainGeometry = new THREE.PlaneGeometry(
+        config.terrainSize, 
+        config.terrainSize, 
+        config.terrainSegments, 
+        config.terrainSegments
+      );
       terrainGeometry.rotateX(-Math.PI / 2);
-      const posAttr = terrainGeometry.attributes.position, pos = posAttr.array;
-      for (let i = 0; i < pos.length; i += 3) pos[i + 1] = getTerrainHeight(pos[i], pos[i + 2]);
+      
+      const posAttr = terrainGeometry.attributes.position;
+      const pos = posAttr.array;
+      
+      // Initial terrain setup
+      for (let i = 0; i < pos.length; i += 3) {
+        pos[i + 1] = getTerrainHeight(pos[i], pos[i + 2]);
+      }
       posAttr.needsUpdate = true;
       terrainGeometry.computeVertexNormals();
 
-      // FIXED: Simplified mobile shader
+      // ========== TERRAIN MATERIAL - Optimized shader ==========
+      // Key optimization: Use simple MeshBasicMaterial variant for mobile
       const terrainMaterial = new THREE.ShaderMaterial({
         uniforms: {
-          time: { value: 0 }, 
-          scrollOffset: { value: 0 },
           colorSand: { value: new THREE.Color(0xDEB8A0) },
           colorDune: { value: new THREE.Color(0xE8A87C) },
           colorPeak: { value: new THREE.Color(0x8B2942) },
           hasRivers: { value: 0.0 },
-          riverColor: { value: new THREE.Color(0x00FFFF) },
-          isMobile: { value: isMobile ? 1.0 : 0.0 }
+          riverColor: { value: new THREE.Color(0x00FFFF) }
         },
         vertexShader: `
-          varying vec3 vPosition; 
-          varying vec3 vNormal; 
           varying float vElevation;
-          void main() { 
-            vPosition = position; 
-            vNormal = normal; 
-            vElevation = position.y; 
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); 
+          varying vec3 vNormal;
+          void main() {
+            vElevation = position.y;
+            vNormal = normal;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
           }
         `,
         fragmentShader: `
-          uniform float time, scrollOffset, hasRivers, isMobile;
           uniform vec3 colorSand, colorDune, colorPeak, riverColor;
-          varying vec3 vPosition, vNormal; 
+          uniform float hasRivers;
           varying float vElevation;
-          
-          // FIXED: Simplified hash for mobile
-          float hash(vec2 p) { 
-            return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); 
-          }
+          varying vec3 vNormal;
           
           void main() {
-            float heightFactor = clamp((vElevation + 20.0) / 40.0, 0.0, 1.0);
-            vec3 color = heightFactor < 0.5 
-              ? mix(colorSand, colorDune, heightFactor * 2.0) 
-              : mix(colorDune, colorPeak, (heightFactor - 0.5) * 2.0);
+            // Height-based coloring
+            float h = clamp((vElevation + 20.0) / 40.0, 0.0, 1.0);
+            vec3 color = h < 0.5 
+              ? mix(colorSand, colorDune, h * 2.0) 
+              : mix(colorDune, colorPeak, (h - 0.5) * 2.0);
             
-            // FIXED: Simplified river/forest logic for mobile
+            // River in valleys
             if (hasRivers > 0.5) {
-              float isValleyFloor = smoothstep(-3.5, -5.5, vElevation);
-              
-              if (isMobile < 0.5) {
-                // Full forest detail on desktop
-                vec2 scrolledPos = vec2(vPosition.x + scrollOffset, vPosition.z);
-                float notOnValleyFloor = smoothstep(-6.0, -3.0, vElevation);
-                vec2 cellCoord = floor(scrolledPos / 16.0);
-                float neighbors = 0.0;
-                for (float dx = -1.0; dx <= 1.0; dx += 1.0) {
-                  for (float dz = -1.0; dz <= 1.0; dz += 1.0) {
-                    if (dx != 0.0 || dz != 0.0) {
-                      if (hash(cellCoord + vec2(dx, dz)) > 0.2) neighbors += 1.0;
-                    }
-                  }
-                }
-                float lifePattern = (neighbors >= 2.0 && neighbors <= 7.0) ? 1.0 : (neighbors >= 1.0 && hash(cellCoord) > 0.25) ? 0.9 : 0.0;
-                float forestCoverage = smoothstep(0.2, 0.8, lifePattern * notOnValleyFloor);
-                float elevationDarkness = pow(smoothstep(-10.0, 10.0, vElevation), 0.7);
-                vec3 forestColor = neighbors >= 5.0 
-                  ? colorSand * (0.12 + elevationDarkness * 0.08) 
-                  : neighbors >= 3.0 
-                    ? colorSand * (0.20 + elevationDarkness * 0.12) 
-                    : colorSand * (0.30 + elevationDarkness * 0.15);
-                color = mix(color, forestColor, forestCoverage * 0.95);
-              } else {
-                // Simplified forest for mobile - just darken higher elevations
-                float notOnValleyFloor = smoothstep(-6.0, -3.0, vElevation);
-                vec2 cellCoord = floor(vPosition.xz / 20.0);
-                float forestNoise = hash(cellCoord);
-                if (forestNoise > 0.3) {
-                  color = mix(color, colorSand * 0.25, notOnValleyFloor * 0.7);
-                }
-              }
-              
-              color = mix(color, riverColor * (0.85 + sin(time * 0.5) * 0.1), isValleyFloor * 0.98);
+              float riverMask = smoothstep(-3.5, -5.5, vElevation);
+              color = mix(color, riverColor * 0.9, riverMask * 0.95);
             }
             
-            float lit;
-            if (isMobile > 0.5) {
-              // Simple lighting for mobile
-              lit = 0.6 + heightFactor * 0.4;
-            } else {
-              vec3 lightDir = normalize(vec3(0.6, 0.8, 0.7));
-              float diffuse = max(dot(vNormal, lightDir), 0.0);
-              float frontFacing = max(0.0, dot(vNormal, vec3(0.0, 0.0, 1.0)));
-              float sideFacing = abs(dot(vNormal, vec3(1.0, 0.0, 0.0)));
-              float ambient = 0.35;
-              float shadowFactor = 1.0 - sideFacing * 0.5;
-              lit = ambient + diffuse * 0.65 * shadowFactor;
-            }
+            // Simple lighting based on normal (baked look)
+            vec3 lightDir = normalize(vec3(0.5, 1.0, 0.3));
+            float light = 0.5 + 0.5 * max(dot(vNormal, lightDir), 0.0);
             
-            gl_FragColor = vec4(color * lit, 1.0);
+            gl_FragColor = vec4(color * light, 1.0);
           }
         `,
-        side: THREE.DoubleSide
+        side: THREE.FrontSide
       });
       
       const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
       scene.add(terrain);
 
-      // Volume material (same as before but with mobile optimizations applied)
+      // ========== VOLUME (Base and Walls) - With glowing edge ==========
       const volumeMaterial = new THREE.ShaderMaterial({
-        uniforms: { 
-          baseColor: { value: new THREE.Color(0x2F8B7B) }, 
-          gridColor: { value: new THREE.Color(0x00FFFF) },
+        uniforms: {
+          baseColor: { value: new THREE.Color(0x2F8B7B) },
           edgeColor: { value: new THREE.Color(0x00FFFF) },
-          isMobile: { value: isMobile ? 1.0 : 0.0 },
-          volumeDepth: { value: volumeDepth }
+          volumeDepth: { value: config.volumeDepth }
         },
         vertexShader: `
           attribute float isTop;
-          varying vec3 vPosition, vNormal, vWorldNormal;
           varying float vIsTop;
-          void main() { 
-            vPosition = position; 
-            vNormal = normal; 
-            vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+          varying vec3 vWorldNormal;
+          void main() {
             vIsTop = isTop;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); 
+            vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
           }
         `,
         fragmentShader: `
-          uniform vec3 baseColor, gridColor, edgeColor;
-          uniform float isMobile, volumeDepth;
-          varying vec3 vPosition, vNormal, vWorldNormal;
+          uniform vec3 baseColor, edgeColor;
           varying float vIsTop;
+          varying vec3 vWorldNormal;
+          
           void main() {
             vec3 color = baseColor;
             
-            // FIXED: Skip grid on mobile
-            if (isMobile < 0.5) {
-              float gridSize = 4.0; 
-              vec2 grid = abs(fract(vPosition.xy / gridSize - 0.5) - 0.5) / fwidth(vPosition.xy / gridSize);
-              float gridMask = 1.0 - min(min(grid.x, grid.y), 1.0);
-              color = mix(baseColor, gridColor, gridMask * 0.15);
-            }
+            // Simple lighting
+            vec3 lightDir = normalize(vec3(0.5, 1.0, 0.3));
+            float light = 0.4 + 0.6 * max(dot(vWorldNormal, lightDir), 0.0);
             
-            float lit;
-            if (isMobile > 0.5) {
-              lit = 0.7;
-            } else {
-              vec3 lightDir = normalize(vec3(0.6, 0.8, 0.7));
-              float diffuse = max(dot(vWorldNormal, lightDir), 0.0);
-              float ambient = 0.35;
-              lit = ambient + diffuse * 0.65;
-            }
+            // Glowing edge at top
+            float edgeGlow = smoothstep(0.85, 1.0, vIsTop);
+            color = mix(color * light, edgeColor * 1.5, edgeGlow);
             
-            float edgeGlow = step(0.92, vIsTop);
-            color = mix(color, edgeColor * 2.0, edgeGlow);
-            
-            gl_FragColor = vec4(color * lit, 1.0);
+            gl_FragColor = vec4(color, 1.0);
           }
         `,
         side: THREE.DoubleSide
       });
+      
+      // Simple material for bottom plane (no edge needed)
+      const bottomMaterial = new THREE.MeshBasicMaterial({
+        color: 0x2F8B7B,
+        side: THREE.DoubleSide
+      });
 
-      const bottomGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize);
+      // Bottom plane
+      const bottomGeometry = new THREE.PlaneGeometry(config.terrainSize, config.terrainSize);
       bottomGeometry.rotateX(-Math.PI / 2);
-      const bottomPlane = new THREE.Mesh(bottomGeometry, volumeMaterial);
-      bottomPlane.position.y = -volumeDepth;
+      const bottomPlane = new THREE.Mesh(bottomGeometry, bottomMaterial);
+      bottomPlane.position.y = -config.volumeDepth;
       scene.add(bottomPlane);
 
+      // Walls - with isTop attribute for edge glow
       function createWallStrip(samples) {
         const geometry = new THREE.BufferGeometry();
         const positions = new Float32Array(samples * 2 * 3);
         const normals = new Float32Array(samples * 2 * 3);
         const isTop = new Float32Array(samples * 2);
         const indices = [];
+        
+        // Mark top vertices
         for (let i = 0; i < samples; i++) {
-          isTop[i * 2] = 1.0;
-          isTop[i * 2 + 1] = 0.0;
+          isTop[i * 2] = 1.0;      // Top vertex
+          isTop[i * 2 + 1] = 0.0;  // Bottom vertex
         }
-        for (let i = 0; i < samples - 1; i++) { 
-          const a = i * 2, b = i * 2 + 1, c = (i + 1) * 2, d = (i + 1) * 2 + 1; 
-          indices.push(a, b, c, b, d, c); 
+        
+        for (let i = 0; i < samples - 1; i++) {
+          const a = i * 2, b = i * 2 + 1, c = (i + 1) * 2, d = (i + 1) * 2 + 1;
+          indices.push(a, b, c, b, d, c);
         }
+        
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
         geometry.setAttribute('isTop', new THREE.BufferAttribute(isTop, 1));
@@ -1114,21 +745,28 @@
         return geometry;
       }
       
-      const frontWallGeometry = createWallStrip(wallSegments), frontWall = new THREE.Mesh(frontWallGeometry, volumeMaterial); scene.add(frontWall);
-      const backWallGeometry = createWallStrip(wallSegments), backWall = new THREE.Mesh(backWallGeometry, volumeMaterial); scene.add(backWall);
-      const leftWallGeometry = createWallStrip(wallSegments), leftWall = new THREE.Mesh(leftWallGeometry, volumeMaterial); scene.add(leftWall);
-      const rightWallGeometry = createWallStrip(wallSegments), rightWall = new THREE.Mesh(rightWallGeometry, volumeMaterial); scene.add(rightWall);
+      const ws = config.wallSegments;
+      const frontWallGeometry = createWallStrip(ws);
+      const backWallGeometry = createWallStrip(ws);
+      const leftWallGeometry = createWallStrip(ws);
+      const rightWallGeometry = createWallStrip(ws);
+      
+      const frontWall = new THREE.Mesh(frontWallGeometry, volumeMaterial);
+      const backWall = new THREE.Mesh(backWallGeometry, volumeMaterial);
+      const leftWall = new THREE.Mesh(leftWallGeometry, volumeMaterial);
+      const rightWall = new THREE.Mesh(rightWallGeometry, volumeMaterial);
+      
+      scene.add(frontWall, backWall, leftWall, rightWall);
 
-      // Spaceship group
+      // ========== SHIP - Detailed spaceship ==========
       const heliGroup = new THREE.Group();
       heliGroup.position.set(0, 50, 0);
-      heliGroup.scale.set(2, 2, 2);
       scene.add(heliGroup);
-
-      // Create fallback spaceship (same as before)
+      
       function createCoolSpaceship() {
         const shipGroup = new THREE.Group();
         
+        // Main fuselage - sleek elongated shape
         const fuselageMat = new THREE.MeshStandardMaterial({ 
           color: 0x1a1a2e, 
           metalness: 0.9, 
@@ -1137,6 +775,7 @@
           emissiveIntensity: 0.3 
         });
         
+        // Main body - elongated diamond shape
         const bodyGeom = new THREE.ConeGeometry(2.5, 12, 4);
         bodyGeom.rotateZ(Math.PI / 2);
         bodyGeom.rotateY(Math.PI / 4);
@@ -1144,6 +783,7 @@
         body.scale.set(1, 0.4, 0.8);
         shipGroup.add(body);
         
+        // Cockpit - glowing canopy
         const cockpitMat = new THREE.MeshStandardMaterial({ 
           color: 0x00ffff, 
           metalness: 0.1, 
@@ -1159,6 +799,7 @@
         cockpit.scale.set(1.5, 0.6, 0.8);
         shipGroup.add(cockpit);
         
+        // Wings - swept back aggressive style
         const wingMat = new THREE.MeshStandardMaterial({ 
           color: 0x2a1a4a, 
           metalness: 0.8, 
@@ -1181,6 +822,7 @@
         wings.position.set(-1, 0, 0);
         shipGroup.add(wings);
         
+        // Vertical stabilizers
         const finGeom = new THREE.BoxGeometry(3, 0.2, 2.5);
         const finMat = new THREE.MeshStandardMaterial({ color: 0x3a2a5a, metalness: 0.7, roughness: 0.4 });
         
@@ -1194,6 +836,7 @@
         fin2.rotation.x = -0.3;
         shipGroup.add(fin2);
         
+        // Engine pods
         const engineMat = new THREE.MeshBasicMaterial({ color: 0xff6600 });
         const engineGlowMat = new THREE.MeshBasicMaterial({ 
           color: 0x00ffff, 
@@ -1212,6 +855,7 @@
         engine2.position.set(-7, 0, -2.5);
         shipGroup.add(engine2);
         
+        // Engine glow
         const glowGeom = new THREE.SphereGeometry(0.7, 8, 8);
         const glow1 = new THREE.Mesh(glowGeom, engineGlowMat);
         glow1.position.set(-8, 0, 2.5);
@@ -1222,6 +866,7 @@
         glow2.position.set(-8, 0, -2.5);
         shipGroup.add(glow2);
         
+        // Central engine
         const mainEngineGeom = new THREE.CylinderGeometry(1, 1.3, 3, 8);
         mainEngineGeom.rotateZ(Math.PI / 2);
         const mainEngine = new THREE.Mesh(mainEngineGeom, engineMat);
@@ -1233,6 +878,7 @@
         mainGlow.scale.set(2, 1.2, 1.2);
         shipGroup.add(mainGlow);
         
+        // Nose cone detail
         const noseMat = new THREE.MeshStandardMaterial({ 
           color: 0x8B2942, 
           metalness: 0.9, 
@@ -1246,7 +892,7 @@
         nose.position.set(7, 0, 0);
         shipGroup.add(nose);
         
-        // FIXED: Reduce accent lights on mobile
+        // Accent lights along wings (skip on mobile for performance)
         if (!isMobile) {
           const lightMat = new THREE.MeshBasicMaterial({ color: 0xff0044 });
           const lightGeom = new THREE.SphereGeometry(0.15, 6, 6);
@@ -1262,550 +908,248 @@
           }
         }
         
+        shipGroup.scale.set(2, 2, 2);
         return shipGroup;
       }
       
-      const fallbackShip = createCoolSpaceship();
-      heliGroup.add(fallbackShip);
+      const ship = createCoolSpaceship();
+      heliGroup.add(ship);
 
-      // FIXED: Skip model loading on mobile to save bandwidth/memory
-      if (!isMobile) {
-        const loader = new THREE.GLTFLoader();
-        const modelUrls = [
-          'https://static.poly.pizza/mlQBUQRUpM.glb',
-          'https://poly.pizza/api/v1/models/mlQBUQRUpM/download'
-        ];
-        
-        let modelLoaded = false;
-        
-        function tryLoadModel(urlIndex) {
-          if (urlIndex >= modelUrls.length || modelLoaded) return;
-          
-          const url = modelUrls[urlIndex];
-          
-          loader.load(
-            url,
-            (gltf) => {
-              modelLoaded = true;
-              while(heliGroup.children.length > 0) {
-                heliGroup.remove(heliGroup.children[0]);
-              }
-              
-              const shipModel = gltf.scene;
-              const box = new THREE.Box3().setFromObject(shipModel);
-              const size = box.getSize(new THREE.Vector3());
-              const scale = 25 / Math.max(size.x, size.y, size.z);
-              shipModel.scale.set(scale, scale, scale);
-              const center = box.getCenter(new THREE.Vector3());
-              shipModel.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
-              shipModel.rotation.y = Math.PI / 2;
-              heliGroup.add(shipModel);
-            },
-            undefined,
-            () => tryLoadModel(urlIndex + 1)
-          );
-        }
-        
-        tryLoadModel(0);
-      }
-
-      // Animals (same as before with mobile optimization)
-      const animalGroup = new THREE.Group();
-      const polarBearMat = new THREE.MeshStandardMaterial({ color: 0xF5F5F5, roughness: 0.8 });
-      const penguinBodyMat = new THREE.MeshStandardMaterial({ color: 0x212121, roughness: 0.6 });
-      const penguinBellyMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.7 });
-      const animalStep = isMobile ? 60 : 35;
+      // ========== SCAN BEAM - Simple cone ==========
+      const scanBeamGeometry = new THREE.ConeGeometry(20, 50, isMobile ? 16 : 32, 1, true);
+      const scanBeamMaterial = new THREE.MeshBasicMaterial({
+        color: 0x00FF88,
+        transparent: true,
+        opacity: 0,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      const scanBeam = new THREE.Mesh(scanBeamGeometry, scanBeamMaterial);
+      scanBeam.rotation.x = Math.PI;
+      scanBeam.visible = false;
+      scene.add(scanBeam);
       
-      for (let x = -80; x <= 80; x += animalStep) {
-        for (let z = -80; z <= 80; z += animalStep) {
-          const animalObj = new THREE.Group();
-          const px = x + (Math.random() - 0.5) * 20, pz = z + (Math.random() - 0.5) * 20;
-          if (Math.random() > 0.5) {
-            const body = new THREE.Mesh(new THREE.BoxGeometry(3, 1.5, 4), polarBearMat); 
-            body.position.y = 1; 
-            animalObj.add(body);
-            const head = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.5, 1.8), polarBearMat); 
-            head.position.set(0, 1.2, 2.5); 
-            animalObj.add(head);
-          } else {
-            const body = new THREE.Mesh(new THREE.SphereGeometry(0.8, 8, 8), penguinBodyMat); 
-            body.scale.y = 1.5; 
-            body.position.y = 1.2; 
-            animalObj.add(body);
-            const belly = new THREE.Mesh(new THREE.SphereGeometry(0.6, 8, 8), penguinBellyMat); 
-            belly.scale.y = 1.3; 
-            belly.position.set(0, 1.2, 0.4); 
-            animalObj.add(belly);
-          }
-          animalObj.userData = { initialX: px, initialZ: pz };
-          animalObj.position.set(px, getTerrainHeight(px, pz), pz);
-          animalObj.rotation.y = Math.random() * Math.PI * 2;
-          animalGroup.add(animalObj);
+      // Ground ring
+      const ringGeometry = new THREE.RingGeometry(18, 25, isMobile ? 24 : 48);
+      const ringMaterial = new THREE.MeshBasicMaterial({
+        color: 0x00FF88,
+        transparent: true,
+        opacity: 0,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      const groundRing = new THREE.Mesh(ringGeometry, ringMaterial);
+      groundRing.rotation.x = -Math.PI / 2;
+      groundRing.visible = false;
+      scene.add(groundRing);
+
+      // ========== ANIMALS (Arctic only) ==========
+      const animalGroup = new THREE.Group();
+      const animalMat = new THREE.MeshBasicMaterial({ color: 0xF5F5F5 });
+      const animalStep = isMobile ? 80 : 50;
+      
+      for (let x = -60; x <= 60; x += animalStep) {
+        for (let z = -60; z <= 60; z += animalStep) {
+          const animal = new THREE.Group();
+          const px = x + (Math.random() - 0.5) * 30;
+          const pz = z + (Math.random() - 0.5) * 30;
+          
+          // Simple box animal
+          const bodyGeom = new THREE.BoxGeometry(3, 1.5, 2);
+          const body = new THREE.Mesh(bodyGeom, animalMat);
+          body.position.y = 0.75;
+          animal.add(body);
+          
+          animal.userData = { initialX: px, initialZ: pz };
+          animal.position.set(px, getTerrainHeight(px, pz), pz);
+          animal.rotation.y = Math.random() * Math.PI * 2;
+          animalGroup.add(animal);
         }
       }
       animalGroup.visible = false;
       scene.add(animalGroup);
 
-      // Lighting
-      const keyLight = new THREE.DirectionalLight(0x00CED1, 1.0);
-      keyLight.position.set(80, 200, 120);
-      scene.add(keyLight);
-      const fillLight = new THREE.DirectionalLight(0xE8A87C, 0.5);
-      fillLight.position.set(-120, 120, -80);
-      scene.add(fillLight);
-      const ambientLight = new THREE.AmbientLight(0x00CED1, 0.6);
+      // ========== LIGHTING - Minimal ==========
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
       scene.add(ambientLight);
-
-      // ========== SCAN BEAM SYSTEM ==========
-      const scanGroup = new THREE.Group();
-      scene.add(scanGroup);
       
-      // Scan beam cone (from ship to ground)
-      const beamGeometry = new THREE.ConeGeometry(25, 60, 32, 1, true);
-      const beamMaterial = new THREE.ShaderMaterial({
-        uniforms: {
-          time: { value: 0 },
-          opacity: { value: 0 },
-          scanProgress: { value: 0 },
-          beamColor: { value: new THREE.Color(0x00FF88) }
-        },
-        vertexShader: `
-          varying vec2 vUv;
-          varying vec3 vPosition;
-          void main() {
-            vUv = uv;
-            vPosition = position;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-          }
-        `,
-        fragmentShader: `
-          uniform float time;
-          uniform float opacity;
-          uniform float scanProgress;
-          uniform vec3 beamColor;
-          varying vec2 vUv;
-          varying vec3 vPosition;
-          
-          void main() {
-            // Radial gradient from center
-            float dist = length(vUv - vec2(0.5, 0.5)) * 2.0;
-            
-            // Vertical gradient (stronger at bottom)
-            float vertGrad = 1.0 - vUv.y;
-            
-            // Scanning lines effect
-            float scanLine = sin(vPosition.y * 0.5 + time * 8.0) * 0.5 + 0.5;
-            float scanLine2 = sin(vPosition.y * 1.2 - time * 5.0) * 0.5 + 0.5;
-            
-            // Rotating pattern
-            float angle = atan(vPosition.x, vPosition.z);
-            float spiral = sin(angle * 8.0 + time * 3.0 - vPosition.y * 0.3) * 0.5 + 0.5;
-            
-            // Combine effects
-            float pattern = mix(scanLine, scanLine2, 0.5) * 0.3 + spiral * 0.2;
-            
-            // Edge glow
-            float edge = smoothstep(0.8, 1.0, dist);
-            
-            // Final alpha
-            float alpha = (0.15 + pattern * 0.25 + edge * 0.4) * vertGrad * opacity;
-            alpha *= smoothstep(0.0, 0.1, scanProgress) * smoothstep(1.0, 0.9, scanProgress);
-            
-            // Color with slight variation
-            vec3 color = beamColor + vec3(0.0, pattern * 0.2, pattern * 0.3);
-            
-            gl_FragColor = vec4(color, alpha);
-          }
-        `,
-        transparent: true,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending
-      });
-      
-      const scanBeam = new THREE.Mesh(beamGeometry, beamMaterial);
-      scanBeam.rotation.x = Math.PI; // Point downward
-      scanBeam.visible = false;
-      scanGroup.add(scanBeam);
-      
-      // Ground impact ring
-      const ringGeometry = new THREE.RingGeometry(20, 28, 64);
-      const ringMaterial = new THREE.ShaderMaterial({
-        uniforms: {
-          time: { value: 0 },
-          opacity: { value: 0 },
-          scanProgress: { value: 0 },
-          ringColor: { value: new THREE.Color(0x00FF88) }
-        },
-        vertexShader: `
-          varying vec2 vUv;
-          void main() {
-            vUv = uv;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-          }
-        `,
-        fragmentShader: `
-          uniform float time;
-          uniform float opacity;
-          uniform float scanProgress;
-          uniform vec3 ringColor;
-          varying vec2 vUv;
-          
-          void main() {
-            // Rotating segments
-            float angle = atan(vUv.y - 0.5, vUv.x - 0.5);
-            float segments = sin(angle * 16.0 + time * 4.0) * 0.5 + 0.5;
-            
-            // Pulsing
-            float pulse = sin(time * 6.0) * 0.3 + 0.7;
-            
-            // Radial position for ring effect
-            float dist = length(vUv - vec2(0.5));
-            float ring = smoothstep(0.3, 0.35, dist) * smoothstep(0.5, 0.45, dist);
-            
-            float alpha = (0.4 + segments * 0.4) * pulse * ring * opacity;
-            alpha *= smoothstep(0.0, 0.2, scanProgress) * smoothstep(1.0, 0.8, scanProgress);
-            
-            gl_FragColor = vec4(ringColor, alpha);
-          }
-        `,
-        transparent: true,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending
-      });
-      
-      const groundRing = new THREE.Mesh(ringGeometry, ringMaterial);
-      groundRing.rotation.x = -Math.PI / 2;
-      groundRing.visible = false;
-      scanGroup.add(groundRing);
-      
-      // Expanding scan wave on ground
-      const waveGeometry = new THREE.RingGeometry(0.1, 1, 64);
-      const waveMaterial = new THREE.ShaderMaterial({
-        uniforms: {
-          time: { value: 0 },
-          opacity: { value: 0 },
-          waveProgress: { value: 0 },
-          waveColor: { value: new THREE.Color(0x00FFFF) }
-        },
-        vertexShader: `
-          varying vec2 vUv;
-          void main() {
-            vUv = uv;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-          }
-        `,
-        fragmentShader: `
-          uniform float time;
-          uniform float opacity;
-          uniform float waveProgress;
-          uniform vec3 waveColor;
-          varying vec2 vUv;
-          
-          void main() {
-            float dist = length(vUv - vec2(0.5)) * 2.0;
-            float edge = smoothstep(0.9, 1.0, dist);
-            float alpha = edge * opacity * (1.0 - waveProgress);
-            
-            gl_FragColor = vec4(waveColor, alpha * 0.8);
-          }
-        `,
-        transparent: true,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending
-      });
-      
-      const scanWave = new THREE.Mesh(waveGeometry, waveMaterial);
-      scanWave.rotation.x = -Math.PI / 2;
-      scanWave.visible = false;
-      scanGroup.add(scanWave);
-      
-      // Holographic data display (floating near beam)
-      const holoGroup = new THREE.Group();
-      holoGroup.visible = false;
-      scanGroup.add(holoGroup);
-      
-      // Create holographic panels
-      function createHoloPanel(width, height) {
-        const geometry = new THREE.PlaneGeometry(width, height);
-        const material = new THREE.ShaderMaterial({
-          uniforms: {
-            time: { value: 0 },
-            opacity: { value: 0 },
-            panelColor: { value: new THREE.Color(0x00FF88) }
-          },
-          vertexShader: `
-            varying vec2 vUv;
-            void main() {
-              vUv = uv;
-              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-          `,
-          fragmentShader: `
-            uniform float time;
-            uniform float opacity;
-            uniform vec3 panelColor;
-            varying vec2 vUv;
-            
-            float random(vec2 st) {
-              return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
-            }
-            
-            void main() {
-              // Border
-              float border = 0.02;
-              float bx = step(border, vUv.x) * step(border, 1.0 - vUv.x);
-              float by = step(border, vUv.y) * step(border, 1.0 - vUv.y);
-              float borderMask = 1.0 - bx * by;
-              
-              // Scan lines
-              float scanLines = sin(vUv.y * 100.0 + time * 2.0) * 0.1 + 0.9;
-              
-              // Glitch effect
-              float glitch = step(0.98, random(vec2(floor(time * 10.0), floor(vUv.y * 20.0))));
-              
-              // Data bars (fake readout)
-              float bars = step(0.7, random(vec2(floor(vUv.x * 8.0), floor(vUv.y * 12.0 + time))));
-              
-              // Inner content
-              float content = 0.08 + bars * 0.15 * step(0.1, vUv.x) * step(vUv.x, 0.9);
-              
-              float alpha = (borderMask * 0.6 + content) * scanLines * opacity;
-              alpha += glitch * 0.3 * opacity;
-              
-              vec3 color = panelColor;
-              color += vec3(glitch * 0.5);
-              
-              gl_FragColor = vec4(color, alpha * 0.7);
-            }
-          `,
-          transparent: true,
-          side: THREE.DoubleSide,
-          depthWrite: false,
-          blending: THREE.AdditiveBlending
-        });
-        
-        return new THREE.Mesh(geometry, material);
+      // Only add directional light on desktop
+      if (!isMobile) {
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        dirLight.position.set(50, 100, 50);
+        scene.add(dirLight);
       }
-      
-      const holoPanel1 = createHoloPanel(15, 10);
-      holoPanel1.position.set(20, 15, 10);
-      holoPanel1.rotation.y = -0.5;
-      holoGroup.add(holoPanel1);
-      
-      const holoPanel2 = createHoloPanel(12, 8);
-      holoPanel2.position.set(-18, 12, 15);
-      holoPanel2.rotation.y = 0.6;
-      holoGroup.add(holoPanel2);
-      
-      const holoPanel3 = createHoloPanel(10, 14);
-      holoPanel3.position.set(15, 8, -15);
-      holoPanel3.rotation.y = -0.3;
-      holoGroup.add(holoPanel3);
-      
-      // Scan state
-      let scanActive = false;
-      let scanProgress = 0;
-      const scanDuration = 2.5;
-      let waveScale = 0;
-      let scanTime = 0;
 
-      // Animation state
-      let time = 0, scrollOffset = 0;
-      const scrollSpeed = 32;
+      // ========== ANIMATION STATE ==========
+      let time = 0;
+      let scrollOffset = 0;
+      const scrollSpeed = isMobile ? 24 : 32;
+      
       let barrelRollActive = false, barrelRollProgress = 0;
-      const barrelRollDuration = 1.2;
       let loopActive = false, loopProgress = 0;
-      const loopDuration = 1.5;
-      let animationId;
       
-      // FIXED: Frame timing for consistent animation
+      let scanActive = false, scanProgress = 0, scanTime = 0;
+      const scanDuration = 2.5;
+      
+      let animationId;
       let lastTime = performance.now();
-      const targetFPS = isMobile ? 30 : 60;
-      const frameInterval = 1000 / targetFPS;
+      const frameInterval = 1000 / config.targetFPS;
       let frameAccumulator = 0;
+      
+      // Reusable vectors (avoid allocation in loop)
+      const shipWorldPos = new THREE.Vector3();
 
+      // ========== WALL UPDATE ==========
       function updateWalls() {
-        const halfSize = terrainSize / 2;
-        [[frontWallGeometry, halfSize, true], [backWallGeometry, -halfSize, true], [leftWallGeometry, -halfSize, false], [rightWallGeometry, halfSize, false]].forEach(([geom, coord, isZ]) => {
+        const halfSize = config.terrainSize / 2;
+        const walls = [
+          [frontWallGeometry, halfSize, true],
+          [backWallGeometry, -halfSize, true],
+          [leftWallGeometry, -halfSize, false],
+          [rightWallGeometry, halfSize, false]
+        ];
+        
+        walls.forEach(([geom, coord, isZ]) => {
           const arr = geom.attributes.position.array;
-          for (let i = 0; i < wallSegments; i++) {
-            const t = i / (wallSegments - 1);
-            const primary = -halfSize + t * terrainSize;
-            const x = isZ ? primary : coord, z = isZ ? coord : primary;
+          for (let i = 0; i < ws; i++) {
+            const t = i / (ws - 1);
+            const primary = -halfSize + t * config.terrainSize;
+            const x = isZ ? primary : coord;
+            const z = isZ ? coord : primary;
             const height = getTerrainHeight(x + scrollOffset, z);
-            arr[i * 6] = x; arr[i * 6 + 1] = height; arr[i * 6 + 2] = z;
-            arr[i * 6 + 3] = x; arr[i * 6 + 4] = -volumeDepth; arr[i * 6 + 5] = z;
+            const idx = i * 6;
+            arr[idx] = x;
+            arr[idx + 1] = height;
+            arr[idx + 2] = z;
+            arr[idx + 3] = x;
+            arr[idx + 4] = -config.volumeDepth;
+            arr[idx + 5] = z;
           }
           geom.attributes.position.needsUpdate = true;
           geom.computeVertexNormals();
         });
       }
 
+      // ========== MAIN ANIMATION LOOP ==========
       function animate(currentTime) {
         animationId = requestAnimationFrame(animate);
         
-        // FIXED: Frame rate limiting for mobile
         const deltaTime = currentTime - lastTime;
         lastTime = currentTime;
         
+        // Frame rate limiting
         if (isMobile) {
           frameAccumulator += deltaTime;
           if (frameAccumulator < frameInterval) return;
           frameAccumulator -= frameInterval;
         }
         
-        const dt = Math.min(deltaTime / 1000, 0.1); // Cap delta time
+        const dt = Math.min(deltaTime / 1000, 0.1);
         time += dt;
         scrollOffset += scrollSpeed * dt;
 
-        terrainMaterial.uniforms.time.value = time;
-        terrainMaterial.uniforms.scrollOffset.value = scrollOffset;
-
+        // Update terrain vertices
         for (let i = 0; i < pos.length; i += 3) {
           pos[i + 1] = getTerrainHeight(pos[i] + scrollOffset, pos[i + 2]);
         }
         posAttr.needsUpdate = true;
         
-        // FIXED: Skip normal recalculation on mobile
-        if (!isMobile) {
-          terrainGeometry.computeVertexNormals();
-        }
+        // Compute normals every frame for proper lighting (fixes shadow issue)
+        terrainGeometry.computeVertexNormals();
 
+        // Update walls
         updateWalls();
 
+        // Update animals if visible
         if (animalGroup.visible) {
+          const halfSize = config.terrainSize / 2;
           animalGroup.children.forEach(a => {
-            let newX = a.userData.initialX - (scrollOffset % (terrainSize * 2));
-            while (newX < -terrainSize / 2) newX += terrainSize;
-            while (newX > terrainSize / 2) newX -= terrainSize;
-            a.position.set(newX, getTerrainHeight(a.userData.initialX, a.userData.initialZ), a.userData.initialZ);
+            let newX = a.userData.initialX - (scrollOffset % (config.terrainSize * 2));
+            while (newX < -halfSize) newX += config.terrainSize;
+            while (newX > halfSize) newX -= config.terrainSize;
+            a.position.x = newX;
+            a.position.y = getTerrainHeight(a.userData.initialX, a.userData.initialZ);
           });
         }
 
         // Ship movement
-        let baseX = Math.sin(time * 0.8) * 30 + Math.sin(time * 1.6) * 15;
-        let baseZ = Math.sin(time * 0.7) * 22 + Math.cos(time * 1.2) * 12;
-        let baseY = 50 + Math.sin(time * 0.9) * 10 + Math.sin(time * 2.2) * 4;
+        let baseX = Math.sin(time * 0.8) * 25 + Math.sin(time * 1.6) * 10;
+        let baseZ = Math.sin(time * 0.7) * 18 + Math.cos(time * 1.2) * 8;
+        let baseY = 45 + Math.sin(time * 0.9) * 8;
         
-        let rollAngle = Math.sin(time * 0.4) * 0.06;
-        let pitchAngle = Math.sin(time * 0.7) * 0.12;
-        let yawAngle = Math.sin(time * 0.5) * 0.2;
+        let rollAngle = Math.sin(time * 0.4) * 0.05;
+        let pitchAngle = Math.sin(time * 0.7) * 0.1;
+        let yawAngle = Math.sin(time * 0.5) * 0.15;
         
+        // Barrel roll
         if (barrelRollActive) {
-          barrelRollProgress += dt / barrelRollDuration;
+          barrelRollProgress += dt / 1.2;
           if (barrelRollProgress >= 1.0) {
             barrelRollProgress = 0;
             barrelRollActive = false;
           } else {
             const angle = barrelRollProgress * Math.PI * 2;
-            const loopRadius = 20;
-            baseY += Math.sin(angle) * loopRadius + (1 - Math.cos(angle)) * 25;
-            baseZ += (Math.cos(angle) - 1) * loopRadius;
+            baseY += Math.sin(angle) * 15;
             rollAngle = angle;
           }
         }
         
+        // Loop
         if (loopActive) {
-          loopProgress += dt / loopDuration;
+          loopProgress += dt / 1.5;
           if (loopProgress >= 1.0) {
             loopProgress = 0;
             loopActive = false;
           } else {
             const angle = loopProgress * Math.PI * 2;
-            const loopRadius = 30;
-            baseY += Math.sin(angle) * loopRadius;
-            baseX += (Math.cos(angle) - 1) * loopRadius;
+            baseY += Math.sin(angle) * 25;
+            baseX += (Math.cos(angle) - 1) * 20;
             pitchAngle = angle;
           }
         }
         
-        heliGroup.position.x = baseX;
-        heliGroup.position.y = baseY;
-        heliGroup.position.z = baseZ;
-        heliGroup.rotation.y = yawAngle;
-        heliGroup.rotation.x = pitchAngle;
-        heliGroup.rotation.z = rollAngle;
+        heliGroup.position.set(baseX, baseY, baseZ);
+        heliGroup.rotation.set(pitchAngle, yawAngle, rollAngle);
         
-        // ========== SCAN BEAM ANIMATION ==========
+        // Scan beam animation
         if (scanActive) {
           scanTime += dt;
           scanProgress = Math.min(scanTime / scanDuration, 1.0);
           
-          // Position beam under ship
-          const shipWorldPos = new THREE.Vector3();
           heliGroup.getWorldPosition(shipWorldPos);
-          
-          // Get terrain height at ship position
           const terrainY = getTerrainHeight(shipWorldPos.x + scrollOffset, shipWorldPos.z);
           
-          // Position and scale beam
-          scanBeam.position.copy(shipWorldPos);
-          scanBeam.position.y = shipWorldPos.y - 30;
-          const beamHeight = shipWorldPos.y - terrainY - 5;
-          scanBeam.scale.y = beamHeight / 60;
-          scanBeam.scale.x = 0.8 + Math.sin(scanTime * 3) * 0.1;
-          scanBeam.scale.z = 0.8 + Math.cos(scanTime * 3) * 0.1;
+          // Position beam
+          scanBeam.position.set(shipWorldPos.x, shipWorldPos.y - 25, shipWorldPos.z);
+          const beamHeight = Math.max(10, shipWorldPos.y - terrainY - 5);
+          scanBeam.scale.y = beamHeight / 50;
           
-          // Update beam shader
-          beamMaterial.uniforms.time.value = scanTime;
-          beamMaterial.uniforms.opacity.value = Math.sin(scanProgress * Math.PI);
-          beamMaterial.uniforms.scanProgress.value = scanProgress;
+          // Animate opacity
+          const opacity = Math.sin(scanProgress * Math.PI) * 0.4;
+          scanBeamMaterial.opacity = opacity;
+          ringMaterial.opacity = opacity * 1.5;
           
           // Position ground ring
           groundRing.position.set(shipWorldPos.x, terrainY + 0.5, shipWorldPos.z);
-          ringMaterial.uniforms.time.value = scanTime;
-          ringMaterial.uniforms.opacity.value = Math.sin(scanProgress * Math.PI);
-          ringMaterial.uniforms.scanProgress.value = scanProgress;
           
-          // Animate expanding wave
-          waveScale = (scanProgress * 3) % 1;
-          scanWave.position.set(shipWorldPos.x, terrainY + 0.3, shipWorldPos.z);
-          scanWave.scale.set(20 + waveScale * 80, 20 + waveScale * 80, 1);
-          waveMaterial.uniforms.time.value = scanTime;
-          waveMaterial.uniforms.opacity.value = scanProgress < 0.9 ? 1 : (1 - scanProgress) * 10;
-          waveMaterial.uniforms.waveProgress.value = waveScale;
+          // Pulse effect
+          const pulse = 1 + Math.sin(scanTime * 8) * 0.1;
+          groundRing.scale.set(pulse, pulse, 1);
           
-          // Position and animate holo panels
-          holoGroup.position.copy(shipWorldPos);
-          holoGroup.position.y -= 10;
-          holoGroup.rotation.y += dt * 0.3;
-          
-          // Update holo panel shaders
-          [holoPanel1, holoPanel2, holoPanel3].forEach((panel, i) => {
-            panel.material.uniforms.time.value = scanTime;
-            // Stagger the fade in
-            const panelDelay = i * 0.15;
-            const panelProgress = Math.max(0, scanProgress - panelDelay) / (1 - panelDelay);
-            panel.material.uniforms.opacity.value = Math.sin(panelProgress * Math.PI) * 0.9;
-            // Make panels face camera somewhat
-            panel.lookAt(camera.position);
-          });
-          
-          // Check if scan complete
           if (scanProgress >= 1.0) {
             scanActive = false;
             scanBeam.visible = false;
             groundRing.visible = false;
-            scanWave.visible = false;
-            holoGroup.visible = false;
-            
-            // Start the display timer for the report
-            reportDisplayTime = 0;
+            finishScan();
           }
         }
         
-        // Handle report display and auto-dismiss
-        if (reportDisplayTime >= 0 && scanReport.classList.contains('visible') && !scanActive) {
+        // Update report progress
+        if (reportDisplayTime >= 0 && !scanActive) {
           reportDisplayTime += dt;
-          
-          // Update progress bar (shows time remaining)
           const progress = Math.min(reportDisplayTime / reportDisplayDuration, 1);
           scanProgressBar.style.width = (progress * 100) + '%';
           
-          // Auto-dismiss after duration
           if (reportDisplayTime >= reportDisplayDuration) {
             hideScanReport();
             reportDisplayTime = -1;
@@ -1816,13 +1160,11 @@
         document.getElementById('altitude').textContent = Math.floor(heliGroup.position.y * 10 + 500).toString().padStart(4, '0');
         document.getElementById('speed').textContent = Math.floor(150 + Math.sin(time) * 20).toString().padStart(3, '0');
         document.getElementById('heading').textContent = Math.floor((Math.atan2(Math.sin(time * 0.3), Math.cos(time * 0.3)) * 180 / Math.PI + 360) % 360).toString().padStart(3, '0');
-        document.getElementById('lat').textContent = (47.3892 + time * 0.01).toFixed(4);
-        document.getElementById('lon').textContent = (-122.4821 + time * 0.0001).toFixed(4);
 
         renderer.render(scene, camera);
       }
 
-      // FIXED: Proper resize handling with debounce
+      // ========== RESIZE HANDLING ==========
       function updateRendererSize() {
         const dims = getContainerDimensions();
         camera.aspect = dims.width / dims.height;
@@ -1831,395 +1173,14 @@
       }
       
       const debouncedResize = debounce(() => {
-        // Recalculate mobile status
-        const wasMobile = isMobile;
         isMobile = isMobileDevice();
-        
-        // If mobile status changed, update uniforms
-        if (wasMobile !== isMobile) {
-          terrainMaterial.uniforms.isMobile.value = isMobile ? 1.0 : 0.0;
-          volumeMaterial.uniforms.isMobile.value = isMobile ? 1.0 : 0.0;
-        }
-        
         updateRendererSize();
       }, 150);
       
       window.addEventListener('resize', debouncedResize);
-      
-      // FIXED: Handle orientation change specifically
-      window.addEventListener('orientationchange', () => {
-        // Delay resize to allow browser to complete orientation change
-        setTimeout(updateRendererSize, 300);
-      });
+      window.addEventListener('orientationchange', () => setTimeout(updateRendererSize, 300));
 
-      // Theme system
-      const themes = {
-        desert: {
-          background: 0x00CED1, fog: 0x00CED1, title: 'DESERT RECON // XS-4',
-          colorSand: new THREE.Color(0xDEB8A0), colorDune: new THREE.Color(0xE8A87C), colorPeak: new THREE.Color(0x8B2942),
-          volumeBase: new THREE.Color(0x2F8B7B), volumeGrid: new THREE.Color(0x00FFFF),
-          keyLightColor: 0xFFFFFF, fillLightColor: 0xE8A87C, ambientColor: 0x00CED1,
-          hasRivers: false, riverColor: new THREE.Color(0x00FFFF),
-          hudColor: '#E8A87C', hudTitleColor: '#8B2942', hudLabelColor: '#DEB8A0', hudValueColor: '#00FFFF',
-          showAnimals: false
-        },
-        arctic: {
-          background: 0xB0E0E6, fog: 0xC4D4E0, title: 'ARCTIC RECON // XS-4',
-          colorSand: new THREE.Color(0xD6E5F0), colorDune: new THREE.Color(0xF0F8FF), colorPeak: new THREE.Color(0x4A6B8A),
-          volumeBase: new THREE.Color(0x5D6D7E), volumeGrid: new THREE.Color(0x7FFFD4),
-          keyLightColor: 0xF0F8FF, fillLightColor: 0xB0E0E6, ambientColor: 0xE6F2F7,
-          hasRivers: true, riverColor: new THREE.Color(0xA8C8DC),
-          hudColor: '#4A6B8A', hudTitleColor: '#2C3E50', hudLabelColor: '#A8C8DC', hudValueColor: '#7FFFD4',
-          showAnimals: true
-        },
-        jungle: {
-          background: 0xA8BF6A, fog: 0xC9B458, title: 'JUNGLE RECON // XS-4',
-          colorSand: new THREE.Color(0xD4A857), colorDune: new THREE.Color(0xC46A41), colorPeak: new THREE.Color(0x1B4D3E),
-          volumeBase: new THREE.Color(0x7A6840), volumeGrid: new THREE.Color(0x39FF14),
-          keyLightColor: 0xC9B458, fillLightColor: 0xA8BF6A, ambientColor: 0xA8BF6A,
-          hasRivers: true, riverColor: new THREE.Color(0x0277BD),
-          hudColor: '#6B8E23', hudTitleColor: '#1B4D3E', hudLabelColor: '#C46A41', hudValueColor: '#39FF14',
-          showAnimals: false
-        }
-      };
-
-      function applyTheme(themeName) {
-        currentTheme = themeName; // Track for scan functionality
-        const t = themes[themeName];
-        renderer.setClearColor(t.background);
-        scene.fog.color.setHex(t.fog);
-        terrainMaterial.uniforms.colorSand.value = t.colorSand;
-        terrainMaterial.uniforms.colorDune.value = t.colorDune;
-        terrainMaterial.uniforms.colorPeak.value = t.colorPeak;
-        terrainMaterial.uniforms.hasRivers.value = t.hasRivers ? 1.0 : 0.0;
-        terrainMaterial.uniforms.riverColor.value = t.riverColor;
-        volumeMaterial.uniforms.baseColor.value = t.volumeBase;
-        volumeMaterial.uniforms.gridColor.value = t.volumeGrid;
-        volumeMaterial.uniforms.edgeColor.value = t.volumeGrid;
-        keyLight.color.setHex(t.keyLightColor);
-        fillLight.color.setHex(t.fillLightColor);
-        ambientLight.color.setHex(t.ambientColor);
-        animalGroup.visible = t.showAnimals;
-        
-        // Update CSS custom properties
-        document.documentElement.style.setProperty('--hud-color', t.hudColor);
-        document.documentElement.style.setProperty('--hud-title-color', t.hudTitleColor);
-        document.documentElement.style.setProperty('--hud-label-color', t.hudLabelColor);
-        document.documentElement.style.setProperty('--hud-value-color', t.hudValueColor);
-        
-        document.querySelector('.hud-top-left .title').textContent = `◈ ${t.title}`;
-        document.querySelectorAll('.hud').forEach(h => h.style.color = t.hudColor);
-        document.querySelectorAll('.title').forEach(h => h.style.color = t.hudTitleColor);
-        document.querySelectorAll('.label').forEach(h => h.style.color = t.hudLabelColor);
-        document.querySelectorAll('.value').forEach(h => h.style.color = t.hudValueColor);
-        document.querySelectorAll('.theme-btn[data-theme]').forEach(b => { 
-          b.classList.remove('active'); 
-          if (b.dataset.theme === themeName) b.classList.add('active'); 
-        });
-      }
-
-      // Event listeners
-      document.querySelectorAll('.theme-btn[data-theme]').forEach(btn => {
-        btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
-      });
-      
-      document.getElementById('barrel-roll-btn').addEventListener('click', () => {
-        if (!barrelRollActive) {
-          barrelRollActive = true;
-          barrelRollProgress = 0;
-        }
-      });
-
-      document.getElementById('loop-btn').addEventListener('click', () => {
-        if (!loopActive) {
-          loopActive = true;
-          loopProgress = 0;
-        }
-      });
-
-      // ========== SCAN FUNCTIONALITY ==========
-      const scanBtn = document.getElementById('scan-btn');
-      const scanReport = document.getElementById('scan-report');
-      const scanReportContent = document.getElementById('scan-report-content');
-      const scanProgressBar = document.getElementById('scan-progress-bar');
-      
-      let isScanning = false;
-      let currentTheme = 'desert';
-      let reportDisplayTime = 0;
-      const reportDisplayDuration = 4.0; // How long report stays visible after scan completes
-      
-      // Theme-specific scan data
-      const themeScanData = {
-        desert: {
-          biome: 'Arid Desert',
-          climate: 'Hot & Dry',
-          avgTemp: '42°C',
-          humidity: '12%',
-          windSpeed: '28 km/h',
-          visibility: '15 km',
-          resources: [
-            { type: 'resource', icon: '🔶', title: 'Copper Deposits', desc: 'High-grade copper ore detected in mesa formations', coords: 'Grid 7-Delta' },
-            { type: 'resource', icon: '💎', title: 'Silica Crystals', desc: 'Pure silicon dioxide formations suitable for tech manufacturing', coords: 'Grid 4-Alpha' },
-            { type: 'anomaly', icon: '⚡', title: 'Electromagnetic Anomaly', desc: 'Unusual EM readings detected beneath dune field. Origin unknown.', coords: 'Grid 9-Gamma' }
-          ],
-          hazards: [
-            { type: 'hazard', icon: '🌡️', title: 'Thermal Extremes', desc: 'Surface temperatures exceeding safe EVA limits during peak hours' },
-            { type: 'hazard', icon: '🌪️', title: 'Sand Storm Risk', desc: 'High probability of particulate storms in next 6 hours' }
-          ],
-          lifeforms: []
-        },
-        jungle: {
-          biome: 'Tropical Rainforest',
-          climate: 'Hot & Humid',
-          avgTemp: '31°C',
-          humidity: '89%',
-          windSpeed: '8 km/h',
-          visibility: '2 km',
-          resources: [
-            { type: 'resource', icon: '🌿', title: 'Medicinal Flora', desc: 'High concentration of bioactive compounds in canopy species', coords: 'Grid 3-Beta' },
-            { type: 'resource', icon: '💧', title: 'Fresh Water Source', desc: 'Clean aquifer detected at 12m depth', coords: 'Grid 5-Delta' },
-            { type: 'resource', icon: '🪨', title: 'Rare Earth Elements', desc: 'Significant REE deposits in riverbed sediment', coords: 'Grid 8-Alpha' }
-          ],
-          hazards: [
-            { type: 'hazard', icon: '☠️', title: 'Toxic Spores', desc: 'Airborne fungal spores detected - filtration recommended' },
-            { type: 'hazard', icon: '🦠', title: 'Pathogen Risk', desc: 'Unknown microbial signatures in water sources' }
-          ],
-          lifeforms: [
-            { type: 'life', icon: '🦜', title: 'Avian Species (127)', desc: 'Diverse bird population including several unclassified species' },
-            { type: 'life', icon: '🐒', title: 'Primate Activity', desc: 'Large primate colony detected in eastern canopy sector' }
-          ]
-        },
-        arctic: {
-          biome: 'Polar Tundra',
-          climate: 'Freezing',
-          avgTemp: '-18°C',
-          humidity: '45%',
-          windSpeed: '52 km/h',
-          visibility: '8 km',
-          resources: [
-            { type: 'resource', icon: '❄️', title: 'Pure Ice Deposits', desc: 'Ancient glacial ice suitable for water extraction', coords: 'Grid 2-Gamma' },
-            { type: 'resource', icon: '⛽', title: 'Methane Pockets', desc: 'Subsurface methane reserves detected under permafrost', coords: 'Grid 6-Beta' },
-            { type: 'anomaly', icon: '🔮', title: 'Subglacial Structure', desc: 'Geometric formation detected 200m below ice sheet. Requires investigation.', coords: 'Grid 1-Delta' }
-          ],
-          hazards: [
-            { type: 'hazard', icon: '🥶', title: 'Hypothermia Risk', desc: 'Extreme cold - thermal protection mandatory' },
-            { type: 'hazard', icon: '❄️', title: 'Ice Instability', desc: 'Crevasse network detected - surface navigation hazardous' }
-          ],
-          lifeforms: [
-            { type: 'life', icon: '🐻‍❄️', title: 'Polar Bears (12)', desc: 'Large predator presence - maintain safe distance' },
-            { type: 'life', icon: '🐧', title: 'Penguin Colony', desc: 'Breeding colony of ~2,400 individuals detected' },
-            { type: 'life', icon: '🦭', title: 'Marine Mammals', desc: 'Seal population in coastal waters' }
-          ]
-        }
-      };
-      
-      // Update beam color based on theme
-      function updateScanBeamColor() {
-        const colors = {
-          desert: { beam: 0x00FF88, ring: 0x00FF88, wave: 0x00FFFF, panel: 0x00FF88 },
-          jungle: { beam: 0x39FF14, ring: 0x39FF14, wave: 0x00FF88, panel: 0x39FF14 },
-          arctic: { beam: 0x7FFFD4, ring: 0x7FFFD4, wave: 0x00FFFF, panel: 0x7FFFD4 }
-        };
-        const c = colors[currentTheme];
-        beamMaterial.uniforms.beamColor.value.setHex(c.beam);
-        ringMaterial.uniforms.ringColor.value.setHex(c.ring);
-        waveMaterial.uniforms.waveColor.value.setHex(c.wave);
-        [holoPanel1, holoPanel2, holoPanel3].forEach(p => {
-          p.material.uniforms.panelColor.value.setHex(c.panel);
-        });
-      }
-      
-      function generateScanReport() {
-        const data = themeScanData[currentTheme];
-        const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
-        const scanId = Math.random().toString(36).substring(2, 8).toUpperCase();
-        
-        // Calculate terrain stats from actual geometry
-        let minHeight = Infinity, maxHeight = -Infinity, totalHeight = 0;
-        const positions = terrainGeometry.attributes.position.array;
-        for (let i = 1; i < positions.length; i += 3) {
-          const h = positions[i];
-          minHeight = Math.min(minHeight, h);
-          maxHeight = Math.max(maxHeight, h);
-          totalHeight += h;
-        }
-        const avgHeight = totalHeight / (positions.length / 3);
-        const elevationRange = maxHeight - minHeight;
-        
-        return `
-          <div class="scan-section">
-            <div class="scan-section-title">◈ Scan Metadata</div>
-            <div class="scan-data-grid">
-              <div class="scan-data-item">
-                <div class="scan-data-label">Scan ID</div>
-                <div class="scan-data-value info">#${scanId}</div>
-              </div>
-              <div class="scan-data-item">
-                <div class="scan-data-label">Timestamp</div>
-                <div class="scan-data-value">${timestamp}</div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="scan-section">
-            <div class="scan-section-title">◈ Environmental Data</div>
-            <div class="scan-data-grid">
-              <div class="scan-data-item">
-                <div class="scan-data-label">Biome Type</div>
-                <div class="scan-data-value">${data.biome}</div>
-              </div>
-              <div class="scan-data-item">
-                <div class="scan-data-label">Climate</div>
-                <div class="scan-data-value">${data.climate}</div>
-              </div>
-              <div class="scan-data-item">
-                <div class="scan-data-label">Avg Temperature</div>
-                <div class="scan-data-value ${parseFloat(data.avgTemp) > 35 ? 'warning' : parseFloat(data.avgTemp) < 0 ? 'info' : ''}">${data.avgTemp}</div>
-              </div>
-              <div class="scan-data-item">
-                <div class="scan-data-label">Humidity</div>
-                <div class="scan-data-value">${data.humidity}</div>
-              </div>
-              <div class="scan-data-item">
-                <div class="scan-data-label">Wind Speed</div>
-                <div class="scan-data-value ${parseFloat(data.windSpeed) > 40 ? 'warning' : ''}">${data.windSpeed}</div>
-              </div>
-              <div class="scan-data-item">
-                <div class="scan-data-label">Visibility</div>
-                <div class="scan-data-value">${data.visibility}</div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="scan-section">
-            <div class="scan-section-title">◈ Terrain Analysis</div>
-            <div class="scan-data-grid">
-              <div class="scan-data-item">
-                <div class="scan-data-label">Elevation Range</div>
-                <div class="scan-data-value">${elevationRange.toFixed(1)}m</div>
-              </div>
-              <div class="scan-data-item">
-                <div class="scan-data-label">Avg Elevation</div>
-                <div class="scan-data-value">${avgHeight.toFixed(1)}m</div>
-              </div>
-              <div class="scan-data-item">
-                <div class="scan-data-label">Peak Height</div>
-                <div class="scan-data-value">${maxHeight.toFixed(1)}m</div>
-              </div>
-              <div class="scan-data-item">
-                <div class="scan-data-label">Valley Floor</div>
-                <div class="scan-data-value">${minHeight.toFixed(1)}m</div>
-              </div>
-            </div>
-          </div>
-          
-          ${data.hazards.length > 0 ? `
-          <div class="scan-section">
-            <div class="scan-section-title">⚠ Hazard Warnings</div>
-            <ul class="scan-findings">
-              ${data.hazards.map(h => `
-                <li class="scan-finding ${h.type}">
-                  <span class="scan-finding-icon">${h.icon}</span>
-                  <div class="scan-finding-text">
-                    <div class="scan-finding-title">${h.title}</div>
-                    <div class="scan-finding-desc">${h.desc}</div>
-                  </div>
-                </li>
-              `).join('')}
-            </ul>
-          </div>
-          ` : ''}
-          
-          <div class="scan-section">
-            <div class="scan-section-title">◈ Resources & Anomalies</div>
-            <ul class="scan-findings">
-              ${data.resources.map(r => `
-                <li class="scan-finding ${r.type}">
-                  <span class="scan-finding-icon">${r.icon}</span>
-                  <div class="scan-finding-text">
-                    <div class="scan-finding-title">${r.title}</div>
-                    <div class="scan-finding-desc">${r.desc}</div>
-                    ${r.coords ? `<div class="scan-coordinates">📍 ${r.coords}</div>` : ''}
-                  </div>
-                </li>
-              `).join('')}
-            </ul>
-          </div>
-          
-          ${data.lifeforms.length > 0 ? `
-          <div class="scan-section">
-            <div class="scan-section-title">◈ Lifeform Signatures</div>
-            <ul class="scan-findings">
-              ${data.lifeforms.map(l => `
-                <li class="scan-finding ${l.type}">
-                  <span class="scan-finding-icon">${l.icon}</span>
-                  <div class="scan-finding-text">
-                    <div class="scan-finding-title">${l.title}</div>
-                    <div class="scan-finding-desc">${l.desc}</div>
-                  </div>
-                </li>
-              `).join('')}
-            </ul>
-          </div>
-          ` : `
-          <div class="scan-section">
-            <div class="scan-section-title">◈ Lifeform Signatures</div>
-            <div class="scan-data-item" style="text-align: center; color: rgba(255,255,255,0.4);">
-              No significant lifeforms detected in scan radius
-            </div>
-          </div>
-          `}
-        `;
-      }
-      
-      function showScanReport() {
-        // Generate report content
-        scanReportContent.innerHTML = generateScanReport();
-        scanReport.classList.remove('fading-out');
-        scanReport.classList.add('visible');
-        reportDisplayTime = 0;
-        
-        // Reset progress bar
-        scanProgressBar.style.width = '0%';
-      }
-      
-      function hideScanReport() {
-        scanReport.classList.add('fading-out');
-        scanReport.classList.remove('visible');
-        
-        scanBtn.classList.remove('scanning');
-        scanBtn.textContent = '📡 Scan';
-        isScanning = false;
-      }
-      
-      function startScan() {
-        if (isScanning || scanActive) return;
-        
-        isScanning = true;
-        scanActive = true;
-        scanProgress = 0;
-        scanTime = 0;
-        reportDisplayTime = -1; // -1 means report not yet showing
-        
-        scanBtn.classList.add('scanning');
-        scanBtn.textContent = '⏳ Scanning...';
-        
-        // Update beam colors for current theme
-        updateScanBeamColor();
-        
-        // Show 3D scan elements
-        scanBeam.visible = true;
-        groundRing.visible = true;
-        scanWave.visible = true;
-        holoGroup.visible = true;
-        
-        // Show report immediately as scan starts (it slides in)
-        showScanReport();
-      }
-      
-      scanBtn.addEventListener('click', startScan);
-
-      // FIXED: Visibility change handling for mobile
+      // ========== VISIBILITY HANDLING ==========
       document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
           cancelAnimationFrame(animationId);
@@ -2229,15 +1190,216 @@
         }
       });
 
-      // Initialize
+      // ========== SCAN FUNCTIONALITY ==========
+      const scanBtn = document.getElementById('scan-btn');
+      const scanReport = document.getElementById('scan-report');
+      const scanReportContent = document.getElementById('scan-report-content');
+      const scanProgressBar = document.getElementById('scan-progress-bar');
+      
+      let currentTheme = 'desert';
+      let reportDisplayTime = -1;
+      const reportDisplayDuration = 4.0;
+      
+      const themeScanData = {
+        desert: {
+          biome: 'Arid Desert', climate: 'Hot & Dry', avgTemp: '42°C', humidity: '12%',
+          resources: [
+            { type: 'resource', icon: '🔶', title: 'Copper Deposits', desc: 'High-grade ore in mesa formations' },
+            { type: 'anomaly', icon: '⚡', title: 'EM Anomaly', desc: 'Unknown readings beneath dunes' }
+          ],
+          hazards: [{ type: 'hazard', icon: '🌡️', title: 'Thermal Extremes', desc: 'Surface temps exceed safe limits' }],
+          lifeforms: []
+        },
+        jungle: {
+          biome: 'Rainforest', climate: 'Hot & Humid', avgTemp: '31°C', humidity: '89%',
+          resources: [
+            { type: 'resource', icon: '🌿', title: 'Medicinal Flora', desc: 'Bioactive compounds detected' },
+            { type: 'resource', icon: '💧', title: 'Fresh Water', desc: 'Aquifer at 12m depth' }
+          ],
+          hazards: [{ type: 'hazard', icon: '☠️', title: 'Toxic Spores', desc: 'Filtration recommended' }],
+          lifeforms: [{ type: 'life', icon: '🦜', title: 'Avian Species', desc: '127 bird species detected' }]
+        },
+        arctic: {
+          biome: 'Polar Tundra', climate: 'Freezing', avgTemp: '-18°C', humidity: '45%',
+          resources: [
+            { type: 'resource', icon: '❄️', title: 'Ice Deposits', desc: 'Ancient glacial ice' },
+            { type: 'anomaly', icon: '🔮', title: 'Subglacial Structure', desc: 'Geometric formation at 200m' }
+          ],
+          hazards: [{ type: 'hazard', icon: '🥶', title: 'Hypothermia Risk', desc: 'Thermal protection required' }],
+          lifeforms: [
+            { type: 'life', icon: '🐻‍❄️', title: 'Polar Bears', desc: '12 individuals detected' },
+            { type: 'life', icon: '🐧', title: 'Penguin Colony', desc: '~2,400 individuals' }
+          ]
+        }
+      };
+      
+      function generateScanReport() {
+        const data = themeScanData[currentTheme];
+        const scanId = Math.random().toString(36).substring(2, 6).toUpperCase();
+        
+        let minH = Infinity, maxH = -Infinity;
+        for (let i = 1; i < pos.length; i += 3) {
+          minH = Math.min(minH, pos[i]);
+          maxH = Math.max(maxH, pos[i]);
+        }
+        
+        return `
+          <div class="scan-section">
+            <div class="scan-section-title">◈ Environment</div>
+            <div class="scan-data-grid">
+              <div class="scan-data-item"><div class="scan-data-label">Biome</div><div class="scan-data-value">${data.biome}</div></div>
+              <div class="scan-data-item"><div class="scan-data-label">Temp</div><div class="scan-data-value ${parseFloat(data.avgTemp) > 35 ? 'warning' : parseFloat(data.avgTemp) < 0 ? 'info' : ''}">${data.avgTemp}</div></div>
+              <div class="scan-data-item"><div class="scan-data-label">Elev Range</div><div class="scan-data-value">${(maxH - minH).toFixed(0)}m</div></div>
+              <div class="scan-data-item"><div class="scan-data-label">Scan ID</div><div class="scan-data-value info">#${scanId}</div></div>
+            </div>
+          </div>
+          ${data.hazards.length ? `
+          <div class="scan-section">
+            <div class="scan-section-title">⚠ Hazards</div>
+            <ul class="scan-findings">${data.hazards.map(h => `
+              <li class="scan-finding ${h.type}"><span class="scan-finding-icon">${h.icon}</span><div class="scan-finding-text"><div class="scan-finding-title">${h.title}</div><div class="scan-finding-desc">${h.desc}</div></div></li>
+            `).join('')}</ul>
+          </div>` : ''}
+          <div class="scan-section">
+            <div class="scan-section-title">◈ Discoveries</div>
+            <ul class="scan-findings">${data.resources.map(r => `
+              <li class="scan-finding ${r.type}"><span class="scan-finding-icon">${r.icon}</span><div class="scan-finding-text"><div class="scan-finding-title">${r.title}</div><div class="scan-finding-desc">${r.desc}</div></div></li>
+            `).join('')}</ul>
+          </div>
+          ${data.lifeforms.length ? `
+          <div class="scan-section">
+            <div class="scan-section-title">◈ Lifeforms</div>
+            <ul class="scan-findings">${data.lifeforms.map(l => `
+              <li class="scan-finding ${l.type}"><span class="scan-finding-icon">${l.icon}</span><div class="scan-finding-text"><div class="scan-finding-title">${l.title}</div><div class="scan-finding-desc">${l.desc}</div></div></li>
+            `).join('')}</ul>
+          </div>` : ''}
+        `;
+      }
+      
+      function showScanReport() {
+        scanReportContent.innerHTML = generateScanReport();
+        scanReport.classList.remove('fading-out');
+        scanReport.classList.add('visible');
+        scanProgressBar.style.width = '0%';
+      }
+      
+      function hideScanReport() {
+        scanReport.classList.add('fading-out');
+        scanReport.classList.remove('visible');
+        scanBtn.classList.remove('scanning');
+        scanBtn.textContent = '📡 Scan';
+      }
+      
+      function finishScan() {
+        reportDisplayTime = 0;
+      }
+      
+      function startScan() {
+        if (scanActive) return;
+        
+        scanActive = true;
+        scanProgress = 0;
+        scanTime = 0;
+        reportDisplayTime = -1;
+        
+        scanBtn.classList.add('scanning');
+        scanBtn.textContent = '⏳ Scanning...';
+        
+        // Update beam color for theme
+        const colors = { desert: 0x00FF88, jungle: 0x39FF14, arctic: 0x7FFFD4 };
+        scanBeamMaterial.color.setHex(colors[currentTheme]);
+        ringMaterial.color.setHex(colors[currentTheme]);
+        
+        scanBeam.visible = true;
+        groundRing.visible = true;
+        
+        showScanReport();
+      }
+      
+      scanBtn.addEventListener('click', startScan);
+
+      // ========== THEME SYSTEM ==========
+      const themes = {
+        desert: {
+          background: 0x00CED1, title: 'DESERT RECON // XS-4',
+          colorSand: new THREE.Color(0xDEB8A0),
+          colorDune: new THREE.Color(0xE8A87C),
+          colorPeak: new THREE.Color(0x8B2942),
+          hasRivers: false, riverColor: new THREE.Color(0x00FFFF),
+          volumeColor: new THREE.Color(0x2F8B7B),
+          edgeColor: new THREE.Color(0x00FFFF),
+          hudTitle: '#8B2942', hudLabel: '#DEB8A0', hudValue: '#00FFFF',
+          showAnimals: false
+        },
+        jungle: {
+          background: 0xA8BF6A, title: 'JUNGLE RECON // XS-4',
+          colorSand: new THREE.Color(0xD4A857),
+          colorDune: new THREE.Color(0xC46A41),
+          colorPeak: new THREE.Color(0x1B4D3E),
+          hasRivers: true, riverColor: new THREE.Color(0x0277BD),
+          volumeColor: new THREE.Color(0x7A6840),
+          edgeColor: new THREE.Color(0x39FF14),
+          hudTitle: '#1B4D3E', hudLabel: '#C46A41', hudValue: '#39FF14',
+          showAnimals: false
+        },
+        arctic: {
+          background: 0xB0E0E6, title: 'ARCTIC RECON // XS-4',
+          colorSand: new THREE.Color(0xD6E5F0),
+          colorDune: new THREE.Color(0xF0F8FF),
+          colorPeak: new THREE.Color(0x4A6B8A),
+          hasRivers: true, riverColor: new THREE.Color(0xA8C8DC),
+          volumeColor: new THREE.Color(0x5D6D7E),
+          edgeColor: new THREE.Color(0x7FFFD4),
+          hudTitle: '#2C3E50', hudLabel: '#A8C8DC', hudValue: '#7FFFD4',
+          showAnimals: true
+        }
+      };
+
+      function applyTheme(themeName) {
+        currentTheme = themeName;
+        const t = themes[themeName];
+        
+        renderer.setClearColor(t.background);
+        
+        terrainMaterial.uniforms.colorSand.value = t.colorSand;
+        terrainMaterial.uniforms.colorDune.value = t.colorDune;
+        terrainMaterial.uniforms.colorPeak.value = t.colorPeak;
+        terrainMaterial.uniforms.hasRivers.value = t.hasRivers ? 1.0 : 0.0;
+        terrainMaterial.uniforms.riverColor.value = t.riverColor;
+        
+        // Update volume and edge colors
+        volumeMaterial.uniforms.baseColor.value = t.volumeColor;
+        volumeMaterial.uniforms.edgeColor.value = t.edgeColor;
+        bottomMaterial.color = t.volumeColor;
+        
+        animalGroup.visible = t.showAnimals;
+        
+        document.querySelector('.hud-top-left .title').textContent = `◈ ${t.title}`;
+        document.querySelectorAll('.title').forEach(el => el.style.color = t.hudTitle);
+        document.querySelectorAll('.label').forEach(el => el.style.color = t.hudLabel);
+        document.querySelectorAll('.value').forEach(el => el.style.color = t.hudValue);
+        
+        document.querySelectorAll('.theme-btn[data-theme]').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.theme === themeName);
+        });
+      }
+
+      document.querySelectorAll('.theme-btn[data-theme]').forEach(btn => {
+        btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
+      });
+
+      document.getElementById('barrel-roll-btn').addEventListener('click', () => {
+        if (!barrelRollActive) { barrelRollActive = true; barrelRollProgress = 0; }
+      });
+
+      document.getElementById('loop-btn').addEventListener('click', () => {
+        if (!loopActive) { loopActive = true; loopProgress = 0; }
+      });
+
+      // ========== START ==========
       updateWalls();
       updateRendererSize();
-      
-      // Hide loading overlay
-      const loadingOverlay = document.getElementById('loading');
-      loadingOverlay.classList.add('hidden');
-      
-      // Start animation
+      document.getElementById('loading').classList.add('hidden');
       lastTime = performance.now();
       animate(lastTime);
     }
