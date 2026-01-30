@@ -250,6 +250,390 @@
       box-shadow: 0 0 20px currentColor; 
     }
     
+    /* Scan button styling */
+    .theme-btn.scan-btn {
+      border-color: #00FF88;
+      color: #00FF88;
+      background: linear-gradient(135deg, rgba(0,255,136,0.1) 0%, rgba(0,0,0,0.7) 50%, rgba(0,255,136,0.05) 100%);
+      text-shadow: 0 0 10px rgba(0,255,136,0.9);
+      box-shadow: inset 0 0 15px rgba(0,255,136,0.15), 0 0 12px rgba(0,255,136,0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .theme-btn.scan-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(0,255,136,0.3), transparent);
+      transition: left 0.5s ease;
+    }
+    
+    .theme-btn.scan-btn:hover::before,
+    .theme-btn.scan-btn.scanning::before {
+      left: 100%;
+    }
+    
+    .theme-btn.scan-btn.scanning {
+      animation: scan-pulse 0.5s ease-in-out infinite;
+      pointer-events: none;
+    }
+    
+    @keyframes scan-pulse {
+      0%, 100% { box-shadow: inset 0 0 15px rgba(0,255,136,0.15), 0 0 12px rgba(0,255,136,0.3); }
+      50% { box-shadow: inset 0 0 25px rgba(0,255,136,0.4), 0 0 25px rgba(0,255,136,0.6); }
+    }
+    
+    /* Scan beam is rendered in Three.js - no CSS overlay needed */
+    
+    /* Scan report - transparent holographic overlay */
+    .scan-report {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      transform: translateX(120%);
+      background: linear-gradient(135deg, rgba(0,20,15,0.75) 0%, rgba(0,10,8,0.7) 100%);
+      border: 1px solid rgba(0,255,136,0.4);
+      border-radius: 12px;
+      padding: 0;
+      width: 340px;
+      max-width: calc(100vw - 40px);
+      max-height: calc(100vh - var(--bottom-panel-height) - 60px);
+      overflow: hidden;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 
+        0 0 30px rgba(0,255,136,0.2),
+        inset 0 0 40px rgba(0,255,136,0.03);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    
+    .scan-report.visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(0);
+    }
+    
+    .scan-report.fading-out {
+      opacity: 0;
+      transform: translateX(120%);
+      transition: all 0.4s ease-in;
+    }
+    
+    /* Holographic scan lines effect on report */
+    .scan-report::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,255,136,0.03) 2px,
+        rgba(0,255,136,0.03) 4px
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+    
+    /* Animated scan line across report */
+    .scan-report::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(0,255,136,0.6), transparent);
+      top: 0;
+      animation: report-scan 2s linear infinite;
+      pointer-events: none;
+      z-index: 2;
+    }
+    
+    @keyframes report-scan {
+      0% { top: 0; opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { top: 100%; opacity: 0; }
+    }
+    
+    .scan-report-header {
+      background: linear-gradient(90deg, rgba(0,255,136,0.15), transparent);
+      padding: 12px 15px;
+      border-bottom: 1px solid rgba(0,255,136,0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      z-index: 3;
+    }
+    
+    .scan-report-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 12px;
+      color: #00FF88;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      text-shadow: 0 0 10px rgba(0,255,136,0.8);
+    }
+    
+    .scan-report-close {
+      display: none; /* Hide close button - auto dismisses */
+    }
+    
+    .scan-report-content {
+      padding: 15px;
+      max-height: calc(100vh - var(--bottom-panel-height) - 120px);
+      overflow-y: auto;
+      position: relative;
+      z-index: 3;
+      
+      /* Custom scrollbar for holographic look */
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0,255,136,0.3) transparent;
+    }
+    
+    .scan-report-content::-webkit-scrollbar {
+      width: 4px;
+    }
+    
+    .scan-report-content::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .scan-report-content::-webkit-scrollbar-thumb {
+      background: rgba(0,255,136,0.3);
+      border-radius: 2px;
+    }
+    
+    .scan-section {
+      margin-bottom: 15px;
+      animation: section-fade-in 0.3s ease forwards;
+      opacity: 0;
+    }
+    
+    .scan-section:nth-child(1) { animation-delay: 0.1s; }
+    .scan-section:nth-child(2) { animation-delay: 0.2s; }
+    .scan-section:nth-child(3) { animation-delay: 0.3s; }
+    .scan-section:nth-child(4) { animation-delay: 0.4s; }
+    .scan-section:nth-child(5) { animation-delay: 0.5s; }
+    .scan-section:nth-child(6) { animation-delay: 0.6s; }
+    
+    @keyframes section-fade-in {
+      from { 
+        opacity: 0; 
+        transform: translateX(20px);
+      }
+      to { 
+        opacity: 1; 
+        transform: translateX(0);
+      }
+    }
+    
+    .scan-section:last-child {
+      margin-bottom: 0;
+    }
+    
+    .scan-section-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 10px;
+      color: #00FFFF;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid rgba(0,255,255,0.2);
+    }
+    
+    .scan-data-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+    }
+    
+    .scan-data-item {
+      background: rgba(0,255,136,0.05);
+      border: 1px solid rgba(0,255,136,0.1);
+      border-radius: 4px;
+      padding: 8px;
+    }
+    
+    .scan-data-label {
+      font-size: 8px;
+      color: rgba(255,255,255,0.5);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 2px;
+    }
+    
+    .scan-data-value {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      color: #00FF88;
+      font-weight: 700;
+    }
+    
+    .scan-data-value.warning {
+      color: #FFD700;
+    }
+    
+    .scan-data-value.danger {
+      color: #FF4444;
+    }
+    
+    .scan-data-value.info {
+      color: #00FFFF;
+    }
+    
+    .scan-findings {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .scan-finding {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 8px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 4px;
+      margin-bottom: 6px;
+      border-left: 2px solid;
+    }
+    
+    .scan-finding.anomaly {
+      border-color: #FFD700;
+    }
+    
+    .scan-finding.resource {
+      border-color: #00FF88;
+    }
+    
+    .scan-finding.hazard {
+      border-color: #FF4444;
+    }
+    
+    .scan-finding.life {
+      border-color: #00FFFF;
+    }
+    
+    .scan-finding-icon {
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    
+    .scan-finding-text {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .scan-finding-title {
+      font-size: 11px;
+      color: rgba(255,255,255,0.9);
+      margin-bottom: 2px;
+      font-weight: 600;
+    }
+    
+    .scan-finding-desc {
+      font-size: 9px;
+      color: rgba(255,255,255,0.5);
+      line-height: 1.3;
+    }
+    
+    .scan-coordinates {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 8px;
+      color: rgba(0,255,136,0.6);
+      margin-top: 3px;
+    }
+    
+    /* Progress indicator at bottom */
+    .scan-progress-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #00FF88, #00FFFF);
+      width: 0%;
+      transition: width 0.1s linear;
+      z-index: 10;
+    }
+    
+    @media (max-width: 768px) {
+      .scan-report {
+        top: auto;
+        bottom: calc(var(--bottom-panel-height) + 10px + var(--safe-area-bottom));
+        right: 10px;
+        left: 10px;
+        width: auto;
+        max-height: 50vh;
+        transform: translateY(120%);
+      }
+      
+      .scan-report.visible {
+        transform: translateY(0);
+      }
+      
+      .scan-report.fading-out {
+        transform: translateY(120%);
+      }
+      
+      .scan-report-content {
+        max-height: calc(50vh - 50px);
+      }
+      
+      .scan-data-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 4px;
+      }
+      
+      .scan-data-item {
+        padding: 6px;
+      }
+      
+      .scan-data-value {
+        font-size: 11px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .scan-report {
+        max-height: 45vh;
+      }
+      
+      .scan-report-title {
+        font-size: 10px;
+        letter-spacing: 2px;
+      }
+      
+      .scan-report-content {
+        padding: 10px;
+        max-height: calc(45vh - 45px);
+      }
+      
+      .scan-section {
+        margin-bottom: 10px;
+      }
+      
+      .scan-finding {
+        padding: 6px;
+      }
+      
+      .scan-finding-title {
+        font-size: 10px;
+      }
+      
+      .scan-finding-desc {
+        font-size: 8px;
+      }
+    }
+    
     /* Tablet */
     @media (max-width: 900px) {
       :root {
@@ -329,6 +713,18 @@
   </div>
   
   <div id="canvas-container"></div>
+  
+  <!-- Scan report - holographic overlay -->
+  <div class="scan-report" id="scan-report">
+    <div class="scan-report-header">
+      <div class="scan-report-title">◈ Terrain Analysis</div>
+    </div>
+    <div class="scan-report-content" id="scan-report-content">
+      <!-- Dynamic content inserted here -->
+    </div>
+    <div class="scan-progress-bar" id="scan-progress-bar"></div>
+  </div>
+  
   <div class="scanline"></div>
   <div class="vignette"></div>
   
@@ -360,6 +756,7 @@
       <div class="action-controls">
         <button class="theme-btn barrel-roll" id="loop-btn">🛩 Roll</button>
         <button class="theme-btn barrel-roll" id="barrel-roll-btn">🔃 Loop</button>
+        <button class="theme-btn scan-btn" id="scan-btn">📡 Scan</button>
       </div>
     </div>
   </div>
@@ -959,6 +1356,262 @@
       const ambientLight = new THREE.AmbientLight(0x00CED1, 0.6);
       scene.add(ambientLight);
 
+      // ========== SCAN BEAM SYSTEM ==========
+      const scanGroup = new THREE.Group();
+      scene.add(scanGroup);
+      
+      // Scan beam cone (from ship to ground)
+      const beamGeometry = new THREE.ConeGeometry(25, 60, 32, 1, true);
+      const beamMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+          time: { value: 0 },
+          opacity: { value: 0 },
+          scanProgress: { value: 0 },
+          beamColor: { value: new THREE.Color(0x00FF88) }
+        },
+        vertexShader: `
+          varying vec2 vUv;
+          varying vec3 vPosition;
+          void main() {
+            vUv = uv;
+            vPosition = position;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform float time;
+          uniform float opacity;
+          uniform float scanProgress;
+          uniform vec3 beamColor;
+          varying vec2 vUv;
+          varying vec3 vPosition;
+          
+          void main() {
+            // Radial gradient from center
+            float dist = length(vUv - vec2(0.5, 0.5)) * 2.0;
+            
+            // Vertical gradient (stronger at bottom)
+            float vertGrad = 1.0 - vUv.y;
+            
+            // Scanning lines effect
+            float scanLine = sin(vPosition.y * 0.5 + time * 8.0) * 0.5 + 0.5;
+            float scanLine2 = sin(vPosition.y * 1.2 - time * 5.0) * 0.5 + 0.5;
+            
+            // Rotating pattern
+            float angle = atan(vPosition.x, vPosition.z);
+            float spiral = sin(angle * 8.0 + time * 3.0 - vPosition.y * 0.3) * 0.5 + 0.5;
+            
+            // Combine effects
+            float pattern = mix(scanLine, scanLine2, 0.5) * 0.3 + spiral * 0.2;
+            
+            // Edge glow
+            float edge = smoothstep(0.8, 1.0, dist);
+            
+            // Final alpha
+            float alpha = (0.15 + pattern * 0.25 + edge * 0.4) * vertGrad * opacity;
+            alpha *= smoothstep(0.0, 0.1, scanProgress) * smoothstep(1.0, 0.9, scanProgress);
+            
+            // Color with slight variation
+            vec3 color = beamColor + vec3(0.0, pattern * 0.2, pattern * 0.3);
+            
+            gl_FragColor = vec4(color, alpha);
+          }
+        `,
+        transparent: true,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      });
+      
+      const scanBeam = new THREE.Mesh(beamGeometry, beamMaterial);
+      scanBeam.rotation.x = Math.PI; // Point downward
+      scanBeam.visible = false;
+      scanGroup.add(scanBeam);
+      
+      // Ground impact ring
+      const ringGeometry = new THREE.RingGeometry(20, 28, 64);
+      const ringMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+          time: { value: 0 },
+          opacity: { value: 0 },
+          scanProgress: { value: 0 },
+          ringColor: { value: new THREE.Color(0x00FF88) }
+        },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform float time;
+          uniform float opacity;
+          uniform float scanProgress;
+          uniform vec3 ringColor;
+          varying vec2 vUv;
+          
+          void main() {
+            // Rotating segments
+            float angle = atan(vUv.y - 0.5, vUv.x - 0.5);
+            float segments = sin(angle * 16.0 + time * 4.0) * 0.5 + 0.5;
+            
+            // Pulsing
+            float pulse = sin(time * 6.0) * 0.3 + 0.7;
+            
+            // Radial position for ring effect
+            float dist = length(vUv - vec2(0.5));
+            float ring = smoothstep(0.3, 0.35, dist) * smoothstep(0.5, 0.45, dist);
+            
+            float alpha = (0.4 + segments * 0.4) * pulse * ring * opacity;
+            alpha *= smoothstep(0.0, 0.2, scanProgress) * smoothstep(1.0, 0.8, scanProgress);
+            
+            gl_FragColor = vec4(ringColor, alpha);
+          }
+        `,
+        transparent: true,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      });
+      
+      const groundRing = new THREE.Mesh(ringGeometry, ringMaterial);
+      groundRing.rotation.x = -Math.PI / 2;
+      groundRing.visible = false;
+      scanGroup.add(groundRing);
+      
+      // Expanding scan wave on ground
+      const waveGeometry = new THREE.RingGeometry(0.1, 1, 64);
+      const waveMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+          time: { value: 0 },
+          opacity: { value: 0 },
+          waveProgress: { value: 0 },
+          waveColor: { value: new THREE.Color(0x00FFFF) }
+        },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform float time;
+          uniform float opacity;
+          uniform float waveProgress;
+          uniform vec3 waveColor;
+          varying vec2 vUv;
+          
+          void main() {
+            float dist = length(vUv - vec2(0.5)) * 2.0;
+            float edge = smoothstep(0.9, 1.0, dist);
+            float alpha = edge * opacity * (1.0 - waveProgress);
+            
+            gl_FragColor = vec4(waveColor, alpha * 0.8);
+          }
+        `,
+        transparent: true,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      });
+      
+      const scanWave = new THREE.Mesh(waveGeometry, waveMaterial);
+      scanWave.rotation.x = -Math.PI / 2;
+      scanWave.visible = false;
+      scanGroup.add(scanWave);
+      
+      // Holographic data display (floating near beam)
+      const holoGroup = new THREE.Group();
+      holoGroup.visible = false;
+      scanGroup.add(holoGroup);
+      
+      // Create holographic panels
+      function createHoloPanel(width, height) {
+        const geometry = new THREE.PlaneGeometry(width, height);
+        const material = new THREE.ShaderMaterial({
+          uniforms: {
+            time: { value: 0 },
+            opacity: { value: 0 },
+            panelColor: { value: new THREE.Color(0x00FF88) }
+          },
+          vertexShader: `
+            varying vec2 vUv;
+            void main() {
+              vUv = uv;
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+          `,
+          fragmentShader: `
+            uniform float time;
+            uniform float opacity;
+            uniform vec3 panelColor;
+            varying vec2 vUv;
+            
+            float random(vec2 st) {
+              return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+            }
+            
+            void main() {
+              // Border
+              float border = 0.02;
+              float bx = step(border, vUv.x) * step(border, 1.0 - vUv.x);
+              float by = step(border, vUv.y) * step(border, 1.0 - vUv.y);
+              float borderMask = 1.0 - bx * by;
+              
+              // Scan lines
+              float scanLines = sin(vUv.y * 100.0 + time * 2.0) * 0.1 + 0.9;
+              
+              // Glitch effect
+              float glitch = step(0.98, random(vec2(floor(time * 10.0), floor(vUv.y * 20.0))));
+              
+              // Data bars (fake readout)
+              float bars = step(0.7, random(vec2(floor(vUv.x * 8.0), floor(vUv.y * 12.0 + time))));
+              
+              // Inner content
+              float content = 0.08 + bars * 0.15 * step(0.1, vUv.x) * step(vUv.x, 0.9);
+              
+              float alpha = (borderMask * 0.6 + content) * scanLines * opacity;
+              alpha += glitch * 0.3 * opacity;
+              
+              vec3 color = panelColor;
+              color += vec3(glitch * 0.5);
+              
+              gl_FragColor = vec4(color, alpha * 0.7);
+            }
+          `,
+          transparent: true,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending
+        });
+        
+        return new THREE.Mesh(geometry, material);
+      }
+      
+      const holoPanel1 = createHoloPanel(15, 10);
+      holoPanel1.position.set(20, 15, 10);
+      holoPanel1.rotation.y = -0.5;
+      holoGroup.add(holoPanel1);
+      
+      const holoPanel2 = createHoloPanel(12, 8);
+      holoPanel2.position.set(-18, 12, 15);
+      holoPanel2.rotation.y = 0.6;
+      holoGroup.add(holoPanel2);
+      
+      const holoPanel3 = createHoloPanel(10, 14);
+      holoPanel3.position.set(15, 8, -15);
+      holoPanel3.rotation.y = -0.3;
+      holoGroup.add(holoPanel3);
+      
+      // Scan state
+      let scanActive = false;
+      let scanProgress = 0;
+      const scanDuration = 2.5;
+      let waveScale = 0;
+      let scanTime = 0;
+
       // Animation state
       let time = 0, scrollOffset = 0;
       const scrollSpeed = 32;
@@ -1075,6 +1728,89 @@
         heliGroup.rotation.y = yawAngle;
         heliGroup.rotation.x = pitchAngle;
         heliGroup.rotation.z = rollAngle;
+        
+        // ========== SCAN BEAM ANIMATION ==========
+        if (scanActive) {
+          scanTime += dt;
+          scanProgress = Math.min(scanTime / scanDuration, 1.0);
+          
+          // Position beam under ship
+          const shipWorldPos = new THREE.Vector3();
+          heliGroup.getWorldPosition(shipWorldPos);
+          
+          // Get terrain height at ship position
+          const terrainY = getTerrainHeight(shipWorldPos.x + scrollOffset, shipWorldPos.z);
+          
+          // Position and scale beam
+          scanBeam.position.copy(shipWorldPos);
+          scanBeam.position.y = shipWorldPos.y - 30;
+          const beamHeight = shipWorldPos.y - terrainY - 5;
+          scanBeam.scale.y = beamHeight / 60;
+          scanBeam.scale.x = 0.8 + Math.sin(scanTime * 3) * 0.1;
+          scanBeam.scale.z = 0.8 + Math.cos(scanTime * 3) * 0.1;
+          
+          // Update beam shader
+          beamMaterial.uniforms.time.value = scanTime;
+          beamMaterial.uniforms.opacity.value = Math.sin(scanProgress * Math.PI);
+          beamMaterial.uniforms.scanProgress.value = scanProgress;
+          
+          // Position ground ring
+          groundRing.position.set(shipWorldPos.x, terrainY + 0.5, shipWorldPos.z);
+          ringMaterial.uniforms.time.value = scanTime;
+          ringMaterial.uniforms.opacity.value = Math.sin(scanProgress * Math.PI);
+          ringMaterial.uniforms.scanProgress.value = scanProgress;
+          
+          // Animate expanding wave
+          waveScale = (scanProgress * 3) % 1;
+          scanWave.position.set(shipWorldPos.x, terrainY + 0.3, shipWorldPos.z);
+          scanWave.scale.set(20 + waveScale * 80, 20 + waveScale * 80, 1);
+          waveMaterial.uniforms.time.value = scanTime;
+          waveMaterial.uniforms.opacity.value = scanProgress < 0.9 ? 1 : (1 - scanProgress) * 10;
+          waveMaterial.uniforms.waveProgress.value = waveScale;
+          
+          // Position and animate holo panels
+          holoGroup.position.copy(shipWorldPos);
+          holoGroup.position.y -= 10;
+          holoGroup.rotation.y += dt * 0.3;
+          
+          // Update holo panel shaders
+          [holoPanel1, holoPanel2, holoPanel3].forEach((panel, i) => {
+            panel.material.uniforms.time.value = scanTime;
+            // Stagger the fade in
+            const panelDelay = i * 0.15;
+            const panelProgress = Math.max(0, scanProgress - panelDelay) / (1 - panelDelay);
+            panel.material.uniforms.opacity.value = Math.sin(panelProgress * Math.PI) * 0.9;
+            // Make panels face camera somewhat
+            panel.lookAt(camera.position);
+          });
+          
+          // Check if scan complete
+          if (scanProgress >= 1.0) {
+            scanActive = false;
+            scanBeam.visible = false;
+            groundRing.visible = false;
+            scanWave.visible = false;
+            holoGroup.visible = false;
+            
+            // Start the display timer for the report
+            reportDisplayTime = 0;
+          }
+        }
+        
+        // Handle report display and auto-dismiss
+        if (reportDisplayTime >= 0 && scanReport.classList.contains('visible') && !scanActive) {
+          reportDisplayTime += dt;
+          
+          // Update progress bar (shows time remaining)
+          const progress = Math.min(reportDisplayTime / reportDisplayDuration, 1);
+          scanProgressBar.style.width = (progress * 100) + '%';
+          
+          // Auto-dismiss after duration
+          if (reportDisplayTime >= reportDisplayDuration) {
+            hideScanReport();
+            reportDisplayTime = -1;
+          }
+        }
 
         // Update HUD
         document.getElementById('altitude').textContent = Math.floor(heliGroup.position.y * 10 + 500).toString().padStart(4, '0');
@@ -1148,6 +1884,7 @@
       };
 
       function applyTheme(themeName) {
+        currentTheme = themeName; // Track for scan functionality
         const t = themes[themeName];
         renderer.setClearColor(t.background);
         scene.fog.color.setHex(t.fog);
@@ -1199,6 +1936,288 @@
           loopProgress = 0;
         }
       });
+
+      // ========== SCAN FUNCTIONALITY ==========
+      const scanBtn = document.getElementById('scan-btn');
+      const scanReport = document.getElementById('scan-report');
+      const scanReportContent = document.getElementById('scan-report-content');
+      const scanProgressBar = document.getElementById('scan-progress-bar');
+      
+      let isScanning = false;
+      let currentTheme = 'desert';
+      let reportDisplayTime = 0;
+      const reportDisplayDuration = 4.0; // How long report stays visible after scan completes
+      
+      // Theme-specific scan data
+      const themeScanData = {
+        desert: {
+          biome: 'Arid Desert',
+          climate: 'Hot & Dry',
+          avgTemp: '42°C',
+          humidity: '12%',
+          windSpeed: '28 km/h',
+          visibility: '15 km',
+          resources: [
+            { type: 'resource', icon: '🔶', title: 'Copper Deposits', desc: 'High-grade copper ore detected in mesa formations', coords: 'Grid 7-Delta' },
+            { type: 'resource', icon: '💎', title: 'Silica Crystals', desc: 'Pure silicon dioxide formations suitable for tech manufacturing', coords: 'Grid 4-Alpha' },
+            { type: 'anomaly', icon: '⚡', title: 'Electromagnetic Anomaly', desc: 'Unusual EM readings detected beneath dune field. Origin unknown.', coords: 'Grid 9-Gamma' }
+          ],
+          hazards: [
+            { type: 'hazard', icon: '🌡️', title: 'Thermal Extremes', desc: 'Surface temperatures exceeding safe EVA limits during peak hours' },
+            { type: 'hazard', icon: '🌪️', title: 'Sand Storm Risk', desc: 'High probability of particulate storms in next 6 hours' }
+          ],
+          lifeforms: []
+        },
+        jungle: {
+          biome: 'Tropical Rainforest',
+          climate: 'Hot & Humid',
+          avgTemp: '31°C',
+          humidity: '89%',
+          windSpeed: '8 km/h',
+          visibility: '2 km',
+          resources: [
+            { type: 'resource', icon: '🌿', title: 'Medicinal Flora', desc: 'High concentration of bioactive compounds in canopy species', coords: 'Grid 3-Beta' },
+            { type: 'resource', icon: '💧', title: 'Fresh Water Source', desc: 'Clean aquifer detected at 12m depth', coords: 'Grid 5-Delta' },
+            { type: 'resource', icon: '🪨', title: 'Rare Earth Elements', desc: 'Significant REE deposits in riverbed sediment', coords: 'Grid 8-Alpha' }
+          ],
+          hazards: [
+            { type: 'hazard', icon: '☠️', title: 'Toxic Spores', desc: 'Airborne fungal spores detected - filtration recommended' },
+            { type: 'hazard', icon: '🦠', title: 'Pathogen Risk', desc: 'Unknown microbial signatures in water sources' }
+          ],
+          lifeforms: [
+            { type: 'life', icon: '🦜', title: 'Avian Species (127)', desc: 'Diverse bird population including several unclassified species' },
+            { type: 'life', icon: '🐒', title: 'Primate Activity', desc: 'Large primate colony detected in eastern canopy sector' }
+          ]
+        },
+        arctic: {
+          biome: 'Polar Tundra',
+          climate: 'Freezing',
+          avgTemp: '-18°C',
+          humidity: '45%',
+          windSpeed: '52 km/h',
+          visibility: '8 km',
+          resources: [
+            { type: 'resource', icon: '❄️', title: 'Pure Ice Deposits', desc: 'Ancient glacial ice suitable for water extraction', coords: 'Grid 2-Gamma' },
+            { type: 'resource', icon: '⛽', title: 'Methane Pockets', desc: 'Subsurface methane reserves detected under permafrost', coords: 'Grid 6-Beta' },
+            { type: 'anomaly', icon: '🔮', title: 'Subglacial Structure', desc: 'Geometric formation detected 200m below ice sheet. Requires investigation.', coords: 'Grid 1-Delta' }
+          ],
+          hazards: [
+            { type: 'hazard', icon: '🥶', title: 'Hypothermia Risk', desc: 'Extreme cold - thermal protection mandatory' },
+            { type: 'hazard', icon: '❄️', title: 'Ice Instability', desc: 'Crevasse network detected - surface navigation hazardous' }
+          ],
+          lifeforms: [
+            { type: 'life', icon: '🐻‍❄️', title: 'Polar Bears (12)', desc: 'Large predator presence - maintain safe distance' },
+            { type: 'life', icon: '🐧', title: 'Penguin Colony', desc: 'Breeding colony of ~2,400 individuals detected' },
+            { type: 'life', icon: '🦭', title: 'Marine Mammals', desc: 'Seal population in coastal waters' }
+          ]
+        }
+      };
+      
+      // Update beam color based on theme
+      function updateScanBeamColor() {
+        const colors = {
+          desert: { beam: 0x00FF88, ring: 0x00FF88, wave: 0x00FFFF, panel: 0x00FF88 },
+          jungle: { beam: 0x39FF14, ring: 0x39FF14, wave: 0x00FF88, panel: 0x39FF14 },
+          arctic: { beam: 0x7FFFD4, ring: 0x7FFFD4, wave: 0x00FFFF, panel: 0x7FFFD4 }
+        };
+        const c = colors[currentTheme];
+        beamMaterial.uniforms.beamColor.value.setHex(c.beam);
+        ringMaterial.uniforms.ringColor.value.setHex(c.ring);
+        waveMaterial.uniforms.waveColor.value.setHex(c.wave);
+        [holoPanel1, holoPanel2, holoPanel3].forEach(p => {
+          p.material.uniforms.panelColor.value.setHex(c.panel);
+        });
+      }
+      
+      function generateScanReport() {
+        const data = themeScanData[currentTheme];
+        const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+        const scanId = Math.random().toString(36).substring(2, 8).toUpperCase();
+        
+        // Calculate terrain stats from actual geometry
+        let minHeight = Infinity, maxHeight = -Infinity, totalHeight = 0;
+        const positions = terrainGeometry.attributes.position.array;
+        for (let i = 1; i < positions.length; i += 3) {
+          const h = positions[i];
+          minHeight = Math.min(minHeight, h);
+          maxHeight = Math.max(maxHeight, h);
+          totalHeight += h;
+        }
+        const avgHeight = totalHeight / (positions.length / 3);
+        const elevationRange = maxHeight - minHeight;
+        
+        return `
+          <div class="scan-section">
+            <div class="scan-section-title">◈ Scan Metadata</div>
+            <div class="scan-data-grid">
+              <div class="scan-data-item">
+                <div class="scan-data-label">Scan ID</div>
+                <div class="scan-data-value info">#${scanId}</div>
+              </div>
+              <div class="scan-data-item">
+                <div class="scan-data-label">Timestamp</div>
+                <div class="scan-data-value">${timestamp}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="scan-section">
+            <div class="scan-section-title">◈ Environmental Data</div>
+            <div class="scan-data-grid">
+              <div class="scan-data-item">
+                <div class="scan-data-label">Biome Type</div>
+                <div class="scan-data-value">${data.biome}</div>
+              </div>
+              <div class="scan-data-item">
+                <div class="scan-data-label">Climate</div>
+                <div class="scan-data-value">${data.climate}</div>
+              </div>
+              <div class="scan-data-item">
+                <div class="scan-data-label">Avg Temperature</div>
+                <div class="scan-data-value ${parseFloat(data.avgTemp) > 35 ? 'warning' : parseFloat(data.avgTemp) < 0 ? 'info' : ''}">${data.avgTemp}</div>
+              </div>
+              <div class="scan-data-item">
+                <div class="scan-data-label">Humidity</div>
+                <div class="scan-data-value">${data.humidity}</div>
+              </div>
+              <div class="scan-data-item">
+                <div class="scan-data-label">Wind Speed</div>
+                <div class="scan-data-value ${parseFloat(data.windSpeed) > 40 ? 'warning' : ''}">${data.windSpeed}</div>
+              </div>
+              <div class="scan-data-item">
+                <div class="scan-data-label">Visibility</div>
+                <div class="scan-data-value">${data.visibility}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="scan-section">
+            <div class="scan-section-title">◈ Terrain Analysis</div>
+            <div class="scan-data-grid">
+              <div class="scan-data-item">
+                <div class="scan-data-label">Elevation Range</div>
+                <div class="scan-data-value">${elevationRange.toFixed(1)}m</div>
+              </div>
+              <div class="scan-data-item">
+                <div class="scan-data-label">Avg Elevation</div>
+                <div class="scan-data-value">${avgHeight.toFixed(1)}m</div>
+              </div>
+              <div class="scan-data-item">
+                <div class="scan-data-label">Peak Height</div>
+                <div class="scan-data-value">${maxHeight.toFixed(1)}m</div>
+              </div>
+              <div class="scan-data-item">
+                <div class="scan-data-label">Valley Floor</div>
+                <div class="scan-data-value">${minHeight.toFixed(1)}m</div>
+              </div>
+            </div>
+          </div>
+          
+          ${data.hazards.length > 0 ? `
+          <div class="scan-section">
+            <div class="scan-section-title">⚠ Hazard Warnings</div>
+            <ul class="scan-findings">
+              ${data.hazards.map(h => `
+                <li class="scan-finding ${h.type}">
+                  <span class="scan-finding-icon">${h.icon}</span>
+                  <div class="scan-finding-text">
+                    <div class="scan-finding-title">${h.title}</div>
+                    <div class="scan-finding-desc">${h.desc}</div>
+                  </div>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+          ` : ''}
+          
+          <div class="scan-section">
+            <div class="scan-section-title">◈ Resources & Anomalies</div>
+            <ul class="scan-findings">
+              ${data.resources.map(r => `
+                <li class="scan-finding ${r.type}">
+                  <span class="scan-finding-icon">${r.icon}</span>
+                  <div class="scan-finding-text">
+                    <div class="scan-finding-title">${r.title}</div>
+                    <div class="scan-finding-desc">${r.desc}</div>
+                    ${r.coords ? `<div class="scan-coordinates">📍 ${r.coords}</div>` : ''}
+                  </div>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+          
+          ${data.lifeforms.length > 0 ? `
+          <div class="scan-section">
+            <div class="scan-section-title">◈ Lifeform Signatures</div>
+            <ul class="scan-findings">
+              ${data.lifeforms.map(l => `
+                <li class="scan-finding ${l.type}">
+                  <span class="scan-finding-icon">${l.icon}</span>
+                  <div class="scan-finding-text">
+                    <div class="scan-finding-title">${l.title}</div>
+                    <div class="scan-finding-desc">${l.desc}</div>
+                  </div>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+          ` : `
+          <div class="scan-section">
+            <div class="scan-section-title">◈ Lifeform Signatures</div>
+            <div class="scan-data-item" style="text-align: center; color: rgba(255,255,255,0.4);">
+              No significant lifeforms detected in scan radius
+            </div>
+          </div>
+          `}
+        `;
+      }
+      
+      function showScanReport() {
+        // Generate report content
+        scanReportContent.innerHTML = generateScanReport();
+        scanReport.classList.remove('fading-out');
+        scanReport.classList.add('visible');
+        reportDisplayTime = 0;
+        
+        // Reset progress bar
+        scanProgressBar.style.width = '0%';
+      }
+      
+      function hideScanReport() {
+        scanReport.classList.add('fading-out');
+        scanReport.classList.remove('visible');
+        
+        scanBtn.classList.remove('scanning');
+        scanBtn.textContent = '📡 Scan';
+        isScanning = false;
+      }
+      
+      function startScan() {
+        if (isScanning || scanActive) return;
+        
+        isScanning = true;
+        scanActive = true;
+        scanProgress = 0;
+        scanTime = 0;
+        reportDisplayTime = -1; // -1 means report not yet showing
+        
+        scanBtn.classList.add('scanning');
+        scanBtn.textContent = '⏳ Scanning...';
+        
+        // Update beam colors for current theme
+        updateScanBeamColor();
+        
+        // Show 3D scan elements
+        scanBeam.visible = true;
+        groundRing.visible = true;
+        scanWave.visible = true;
+        holoGroup.visible = true;
+        
+        // Show report immediately as scan starts (it slides in)
+        showScanReport();
+      }
+      
+      scanBtn.addEventListener('click', startScan);
 
       // FIXED: Visibility change handling for mobile
       document.addEventListener('visibilitychange', () => {
